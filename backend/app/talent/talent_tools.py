@@ -312,7 +312,7 @@ class TalentToolService:
         按岗位名称匹配企业维护的岗位 JD，按相关度从高到低返回。
 
         """
-        self._check_context(context)
+        self._check_context(context) #
         # 归一化查询（去空格、转小写）以便更准确地匹配
         normalized_query = "".join(query.lower().split())
         if not normalized_query:

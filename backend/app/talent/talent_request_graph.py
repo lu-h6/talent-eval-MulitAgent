@@ -16,7 +16,6 @@ from app.retrieval.query_plan import Clarification, FilterCondition, QueryPlan, 
 from app.talent.talent_decision_graph import DecisionContext
 from app.talent.talent_tools import TalentToolContext, TalentToolService
 
-
 RequestInputMode = Literal["detailed_requirement", "job_name"]
 RequestStatus = Literal[
     "received",  # 已接收
@@ -130,6 +129,7 @@ def _receive_request(state: TalentRequestState, runtime: Runtime[DecisionContext
 
 def _interpret_input(request_interpreter: RequestInterpreter):
     """构造“解释输入”节点：调用解释器生成结构化草稿。"""
+
     def interpret_input(state: TalentRequestState) -> dict[str, Any]:
         draft = request_interpreter(state["request_text"], None)
         return {
@@ -148,6 +148,7 @@ def _route_input(state: TalentRequestState) -> Literal["lookup_jobs", "build_pla
 
 def _lookup_jobs(job_lookup: JobLookup):
     """构造“查找岗位”节点：调用 JD 查找服务并按租户返回命中列表。"""
+
     def lookup_jobs(state: TalentRequestState, runtime: Runtime[DecisionContext]) -> dict[str, Any]:
         job_query = str(state["draft"].get("job_query") or state["request_text"])
         matches = job_lookup(job_query, runtime.context)
@@ -157,7 +158,7 @@ def _lookup_jobs(job_lookup: JobLookup):
 
 
 def _route_job_matches(
-    state: TalentRequestState,
+        state: TalentRequestState,
 ) -> Literal["select_exact_job", "confirm_job", "no_job_match"]:
     """按命中结果路由：唯一精确匹配直接选中；多个需人工确认；无则未命中。"""
     exact_matches = [item for item in state["job_matches"] if item["match_type"] == "exact"]
@@ -218,6 +219,7 @@ def _route_job_confirmation(state: TalentRequestState) -> str:
 
 def _compile_selected_job(request_interpreter: RequestInterpreter):
     """构造“编译选中岗位”节点：结合已确认的岗位 JD 重新解释请求。"""
+
     def compile_selected_job(state: TalentRequestState) -> dict[str, Any]:
         draft = request_interpreter(state["request_text"], state["selected_job"])
         return {
@@ -336,6 +338,7 @@ def _require_interaction(decision: Any, expected_id: str) -> dict[str, Any]:
 
 def _filter_candidates_node(candidate_filter: CandidateFilter):
     """构造“筛选候选人”节点：执行结构化过滤并判断是否有命中。"""
+
     def filter_candidates(state: TalentRequestState, runtime: Runtime[DecisionContext]) -> dict[str, Any]:
         plan = QueryPlan.model_validate(state["query_plan"])
         candidate_ids = candidate_filter(plan.filters, runtime.context)
@@ -347,14 +350,14 @@ def _filter_candidates_node(candidate_filter: CandidateFilter):
 
 
 def _diagnose_filters(
-    filters: list[FilterCondition],
-    candidate_filter: CandidateFilter,
-    context: DecisionContext,
+        filters: list[FilterCondition],
+        candidate_filter: CandidateFilter,
+        context: DecisionContext,
 ) -> list[dict[str, Any]]:
     """leave-one-out 诊断：逐个移除条件，观察候选数变化，定位导致空集的条件。"""
     diagnostics = []
     for index, condition in enumerate(filters):
-        reduced = filters[:index] + filters[index + 1 :]
+        reduced = filters[:index] + filters[index + 1:]
         hit_count = len(candidate_filter(reduced, context))
         diagnostics.append(
             {
@@ -369,9 +372,10 @@ def _diagnose_filters(
 
 def _resolve_requirements():
     """构造“解决需求”节点：用户补充/修订人才要求，部分场景提供 leave-one-out 诊断。"""
+
     def resolve_requirements(
-        state: TalentRequestState,
-        runtime: Runtime[DecisionContext],
+            state: TalentRequestState,
+            runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
         plan_version = state.get("plan_version", 0)
         interaction_id = f"rr-v{plan_version}"
@@ -454,8 +458,8 @@ def _resolve_requirements():
 
 
 def _apply_relaxations(
-    current: list[FilterCondition],
-    relaxations: list[dict[str, Any]],
+        current: list[FilterCondition],
+        relaxations: list[dict[str, Any]],
 ) -> tuple[list[FilterCondition], list[dict[str, Any]]]:
     """对当前过滤条件应用一组放宽操作（remove 移除 / update 替换）。"""
     updated = list(current)
@@ -524,7 +528,8 @@ def _resolve_conditions(state: TalentRequestState) -> dict[str, Any]:
         # 可选的 semantic_requirements：要求每项含 query，自动分配 requirement_id
         if "semantic_requirements" in decision:
             items = decision["semantic_requirements"]
-            if not isinstance(items, list) or any(not isinstance(item, dict) or not item.get("query") for item in items):
+            if not isinstance(items, list) or any(
+                    not isinstance(item, dict) or not item.get("query") for item in items):
                 raise ValueError("semantic_requirements 的每一项都必须包含 query")
             parsed["semantic_requirements"] = [
                 SemanticRequirement(
@@ -578,9 +583,10 @@ def _resolve_conditions(state: TalentRequestState) -> dict[str, Any]:
 
 def _resolve_empty_candidates(candidate_filter: CandidateFilter):
     """构造“解决空候选人集”节点：诊断后请求用户放宽部分条件。"""
+
     def resolve_empty_candidates(
-        state: TalentRequestState,
-        runtime: Runtime[DecisionContext],
+            state: TalentRequestState,
+            runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
         plan = QueryPlan.model_validate(state["query_plan"])
         plan_version = state.get("plan_version", 0)
@@ -638,11 +644,11 @@ def _resolve_empty_candidates(candidate_filter: CandidateFilter):
 
 
 def build_talent_request_graph(
-    *,
-    request_interpreter: RequestInterpreter,
-    job_lookup: JobLookup,
-    candidate_filter: CandidateFilter | None = None,
-    checkpointer: Any | None = None,
+        *,
+        request_interpreter: RequestInterpreter,
+        job_lookup: JobLookup,
+        candidate_filter: CandidateFilter | None = None,
+        checkpointer: Any | None = None,
 ):
     """组装并编译“人才请求处理”子图。
 

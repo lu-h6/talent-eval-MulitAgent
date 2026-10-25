@@ -730,7 +730,7 @@ function App() {
           </div>
         </div>
         <nav>
-          <button>
+          <button onClick={() => { window.location.href = "/modules.html#dashboard"; }}>
             <LayoutGrid />
             <span>工作台</span>
           </button>
@@ -738,11 +738,11 @@ function App() {
             <UserSquare2 />
             <span>人才档案</span>
           </button>
-          <button>
+          <button onClick={() => { window.location.href = "/modules.html#recommendation"; }}>
             <Sparkles />
             <span>评估与推荐</span>
           </button>
-          <button>
+          <button onClick={() => { window.location.href = "/modules.html#evaluation"; }}>
             <FlaskConical />
             <span>评测中心</span>
           </button>

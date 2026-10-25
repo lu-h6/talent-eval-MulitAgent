@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware  # 跨域（CORS）中间件
 from starlette.requests import Request  # 请求对象类型
 
 from app.api.routes import router  # 业务路由（所有 /api 接口）
+from app.api.talent_portal import router as talent_portal_router  # 评估/推荐页接口
 from app.core.config import get_settings  # 应用配置
 from app.core.logging_config import configure_logging  # 日志初始化
 
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
 
     # 挂载业务路由
     app.include_router(router)
+    app.include_router(talent_portal_router)
     return app
 
 

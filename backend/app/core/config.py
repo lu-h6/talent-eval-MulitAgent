@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     milvus_token: str = "root:Milvus"  # Milvus 认证凭据
     milvus_collection: str = "talent_evidence_v2"  # 默认集合名
 
+    # ---- LangGraph Agent Server（人才评估会话运行时）----
+    langgraph_url: str = "http://127.0.0.1:2024"  # 本地 Agent Server 地址
+    langgraph_assistant_id: str = "talent_decision_engine"  # 前端评估会话默认使用的图
+    langgraph_timeout_seconds: float = 30.0  # 普通控制面请求超时（秒）
+
     # ---- 日志配置 ----
     log_dir: str = "logs"  # 日志输出目录
     service_name: str = "backend"  # 服务名（用于日志文件命名）

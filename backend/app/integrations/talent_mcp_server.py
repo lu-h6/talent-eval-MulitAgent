@@ -13,7 +13,7 @@ from pydantic import Field
 from app.retrieval.query_plan import FilterCondition
 from app.talent.talent_tools import TalentToolContext, TalentToolService, ToolExecutor
 
-
+# 调用上下文提供器类型，用于提供 TalentToolContext
 ContextProvider = Callable[[], TalentToolContext]
 
 
@@ -32,9 +32,9 @@ def talent_context_from_token(token: AccessToken) -> TalentToolContext:
     Raises:
         PermissionError: 当 token 缺少必要声明或 permission_scopes 非列表时抛出。
     """
-    claims = token.claims or {}
-    tenant_id = str(claims.get("tenant_id", "")).strip()
-    raw_permission_scopes = claims.get("permission_scopes", [])
+    claims = token.claims or {}  # claims是
+    tenant_id = str(claims.get("tenant_id", "")).strip()  # tenant_id是租户标识
+    raw_permission_scopes = claims.get("permission_scopes", [])  # permission_scopes是权限范围
     if not isinstance(raw_permission_scopes, (list, tuple)):
         raise PermissionError("Access Token 的 permission_scopes 必须是列表")
     # 清洗权限范围：丢弃空串
@@ -49,7 +49,7 @@ def talent_context_from_token(token: AccessToken) -> TalentToolContext:
         tenant_id=tenant_id,
         permission_scopes=permission_scopes,
         actor_id=token.subject or token.client_id,  # 操作者标识
-        run_id=str(claims.get("run_id", "unknown")),  # 运行 ID
+        run_id=str(claims.get("run_id", "unknown")),  # 运行 ID，用于审计
     )
 
 
@@ -62,12 +62,12 @@ def authenticated_talent_context() -> TalentToolContext:
 
 
 def build_talent_mcp_server(
-    service: TalentToolService,
-    executor: ToolExecutor,
-    *,
-    context_provider: ContextProvider,
-    token_verifier: TokenVerifier | None = None,
-    auth: AuthSettings | None = None,
+        service: TalentToolService,
+        executor: ToolExecutor,
+        *,
+        context_provider: ContextProvider,
+        token_verifier: TokenVerifier | None = None,
+        auth: AuthSettings | None = None,
 ) -> MCPServer:
     """构建一个提供人才检索/证据读取能力的 MCP 服务端。
 
@@ -84,6 +84,7 @@ def build_talent_mcp_server(
     Returns:
         配置完成的 MCPServer 实例。
     """
+    # 创建 MCP 服务器实例，配置服务名称、版本号和描述信息
     server = MCPServer(
         "Talent Capability Service",
         version="13.1.0",
@@ -92,10 +93,11 @@ def build_talent_mcp_server(
         auth=auth,
     )
 
-    @server.tool(structured_output=True)
+    # ---- 工具：可通过 MCP 调用的能力 ----
+    @server.tool(structured_output=True,description="按岗位名称查询企业已经维护的岗位 JD。")
     def lookup_job_descriptions(
-        query: Annotated[str, Field(min_length=1, max_length=200)],
-        limit: Annotated[int, Field(ge=1, le=10)] = 5,
+            query: Annotated[str, Field(min_length=1, max_length=200)],
+            limit: Annotated[int, Field(ge=1, le=10)] = 5,
     ) -> dict[str, Any]:
         """按岗位名称查询企业已经维护的岗位 JD。"""
         context = context_provider()
@@ -106,9 +108,9 @@ def build_talent_mcp_server(
             arguments={"query": query, "limit": limit},
         )
 
-    @server.tool(structured_output=True)
+    @server.tool(structured_output=True,description="按结构化条件筛选授权租户内的候选人。")
     def filter_candidates(
-        filters: Annotated[list[FilterCondition], Field(max_length=20)],
+            filters: Annotated[list[FilterCondition], Field(max_length=20)],
     ) -> dict[str, Any]:
         """按结构化条件筛选授权租户内的候选人。"""
         context = context_provider()
@@ -119,10 +121,10 @@ def build_talent_mcp_server(
             arguments={"filters": filters},
         )
 
-    @server.tool(structured_output=True)
+    @server.tool(structured_output=True, description="在候选人范围内检索材料证据并返回 Candidate Evidence Pack 2.0。")
     def search_candidate_evidence(
-        query: Annotated[str, Field(min_length=1, max_length=500)],
-        candidate_ids: Annotated[list[str], Field(min_length=1, max_length=100)],
+            query: Annotated[str, Field(min_length=1, max_length=500)],
+            candidate_ids: Annotated[list[str], Field(min_length=1, max_length=100)],
     ) -> dict[str, Any]:
         """在候选人范围内检索材料证据并返回 Candidate Evidence Pack 2.0。"""
         context = context_provider()
@@ -133,9 +135,9 @@ def build_talent_mcp_server(
             arguments={"query": query, "candidate_ids": candidate_ids},
         )
 
-    @server.tool(structured_output=True)
+    @server.tool(structured_output=True, description="批量读取授权租户内候选人的结构化基础信息。")
     def get_candidate_profiles(
-        candidate_ids: Annotated[list[str], Field(min_length=1, max_length=100)],
+            candidate_ids: Annotated[list[str], Field(min_length=1, max_length=100)],
     ) -> dict[str, Any]:
         """批量读取授权租户内候选人的结构化基础信息。"""
         context = context_provider()
@@ -151,6 +153,8 @@ def build_talent_mcp_server(
         "talent://jobs/{job_code}",
         title="岗位 JD",
         mime_type="application/json",
+        description="按岗位代码读取岗位 JD；不存在或无权访问时报错。"
+
     )
     def job_description(job_code: str) -> dict[str, Any]:
         """按岗位代码读取岗位 JD；不存在或无权访问时报错。"""
@@ -163,6 +167,7 @@ def build_talent_mcp_server(
         "talent://candidates/{candidate_id}/profile",
         title="候选人基础档案",
         mime_type="application/json",
+        description="读取候选人的基础档案。"
     )
     def candidate_profile(candidate_id: str) -> dict[str, Any]:
         """读取候选人的基础档案。"""
@@ -175,6 +180,7 @@ def build_talent_mcp_server(
         "talent://policies/evaluation/current",
         title="人才评估规则",
         mime_type="text/markdown",
+        description="返回当前生效的人才评估规则文案。"
     )
     def evaluation_policy() -> str:
         """返回当前生效的人才评估规则文案。"""

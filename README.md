@@ -18,6 +18,11 @@
 
 前端是多 Agent 人才评估与推荐系统的统一应用壳层，人才档案模块包含员工花名册和档案资料库。花名册维护结构化员工数据，提供新建员工和每页 10 人分页。档案资料库支持新建知识库、切换知识库、查看文件数量和删除空知识库；非空知识库需要先删除或迁移材料。文件表按每页 10 条分页，上传后自动排入解析、切片和 Milvus 索引链路，同时支持批量删除材料与关联数据。文件详情展示原文件、解析结果、索引记录、切片预览与基础元数据。档案资料库页面内置证据召回测试，可输入查询并附带候选人、材料类型和权限范围过滤项，直接查看匹配 Chunk、相似度分数和来源材料
 
+前端保留两个入口：
+
+- `/`：原有“人才档案”应用，员工花名册、档案资料库、上传、切片、索引、召回实验和证据包。
+- `/modules.html#dashboard`：工作台；`#recommendation` 评估与推荐（表单检索版）；`#evaluation` 评测中心。两个入口通过侧边栏互相跳转。
+
 ## 运行模式
 
 本项目只维护一套中间件环境：PostgreSQL、Redis、MinIO 始终由 Docker Compose 托管。开发模式和发布模式都共用这三类基础服务。
@@ -135,6 +140,32 @@ docker compose -p talent-eval-agents-course --profile app up -d --build
 | `POST /api/talent-search/candidates` | 校验 Query Plan，并用确定性 SQL Builder 返回候选人编号集合 |
 | `POST /api/talent-search` | 输入自然语言查询，依次执行 Query Plan、SQL 候选筛选、混合检索和可选查询优化，返回 Chunk 列表 |
 | `POST /api/index-jobs/{id}/retry` | 为失败的 Milvus 索引任务创建新的幂等重试任务 |
+
+## 评估与推荐页接口
+
+评估会话、SSE 与报告由 LangGraph Agent Server 执行，FastAPI 负责 REST/SSE 网关。完整契约见 [`docs/talent-portal-api.md`](docs/talent-portal-api.md)。
+
+| 接口 | 用途 |
+|---|---|
+| `GET /api/job-descriptions` | 按岗位名称查询或列出当前租户生效 JD |
+| `GET /api/job-descriptions/{job_code}` | 读取单个岗位 JD |
+| `POST /api/candidates/profiles` | 按工号批量读取候选人画像 |
+| `POST /api/talent/threads` | 创建评估/推荐会话 |
+| `GET /api/talent/threads` | 列出当前租户会话 |
+| `POST /api/talent/threads/{id}/runs` | 发起一轮运行并以 SSE 返回节点更新与 interrupt |
+| `POST /api/talent/threads/{id}/resume` | 用 interrupt 载荷恢复运行（SSE） |
+| `GET /api/talent/threads/{id}/state` | 读取状态、下一节点与中断载荷 |
+| `POST /api/talent/evaluations` | 创建完整评估运行，返回 202、evaluation_id、thread_id、run_id |
+| `GET /api/talent/evaluations/{id}` | 轮询评估状态 |
+| `GET /api/talent/evaluations/{id}/report` | 读取评估报告、排名与维度结果 |
+
+启动本地 Agent Server：
+
+```bash
+cd backend
+export PYTHONUTF8=1  # Windows PowerShell: $env:PYTHONUTF8="1"
+uv run langgraph dev --no-browser --no-reload --port 2024
+```
 
 ## 第 8 课复合人才检索
 
