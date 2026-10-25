@@ -181,6 +181,7 @@ def build_talent_mcp_server(
         title="人才评估规则",
         mime_type="text/markdown",
         description="返回当前生效的人才评估规则文案。"
+
     )
     def evaluation_policy() -> str:
         """返回当前生效的人才评估规则文案。"""
