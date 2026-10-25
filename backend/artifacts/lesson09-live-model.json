@@ -1,0 +1,231 @@
+{
+  "query_plan": {
+    "task_type": "find_talent",
+    "filters": [
+      {
+        "field": "region",
+        "operator": "eq",
+        "value": "深圳"
+      }
+    ],
+    "semantic_requirements": [
+      {
+        "requirement_id": "S1",
+        "query": "在 2025 年 1 月至 6 月担任星河项目总负责人",
+        "required": true
+      }
+    ],
+    "preferences": [],
+    "clarifications": []
+  },
+  "candidate_ids": [
+    "C901",
+    "C902"
+  ],
+  "searches": [
+    {
+      "requirement_id": "S1",
+      "strategy": null,
+      "queries": [
+        "在 2025 年 1 月至 6 月担任星河项目总负责人"
+      ],
+      "chunk_count": 3
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "e3332fcf-4c5d-5359-a426-b29436a5306b",
+      "candidate_id": "C901",
+      "content": "# 星河项目交付复盘\n\n项目周期：2025 年 1 月至 2025 年 6 月\n候选人编号：C901\n材料日期：2025 年 7 月 3 日\n\n## 项目范围\n\n星河项目为内部知识检索试点，材料来自产品使用手册、历史工单和交付说明。项目组先整理文档目录，再选择两个业务小组参与试用。试点阶段只提供信息查询，审批操作继续由业务系统处理。\n\n## 工作分工\n\nC901 在 2025 年 1 月至 6 月担任星河项目总负责人，负责排期和交付协调。检索模块由两名工程师开发，测试人员整理问题清单，产品人员确认试点范围。每周例会记录由轮值成员维护。\n\n## 交付记录\n\n三月完成第一轮文档导入，四月开放试用，六月整理验收问题。试用反馈包括来源链接失效、术语缩写难以命中、同一问题出现不同版本答案。六月的工作记录列出来源版本检查和关键词召回两个后续事项。\n",
+      "score": 0.5,
+      "metadata": {
+        "document_version_id": "bc8eca97-baf4-485a-86af-cb6753231d6f"
+      },
+      "requirement_ids": [
+        "S1"
+      ]
+    },
+    {
+      "chunk_id": "45648b39-37f9-59ab-ac59-52f940fe4821",
+      "candidate_id": "C901",
+      "content": "# 半年度工作记录\n\n记录周期：2025 年 1 月至 2025 年 6 月\n候选人编号：C901\n\n## 星河项目\n\nC901 在 2025 年 1 月至 6 月担任星河项目总负责人，负责排期和交付协调。试点期间参加业务访谈，整理查询问题，跟踪材料导入与验收问题。\n\n六月安排知识库材料核对，对过期使用手册登记替换版本。来源定位需要保留文档标题和段落位置，避免业务人员根据截取片段误解操作步骤。后续计划把来源版本显示加入查询界面。\n\n## 日常协作\n\n协助整理每周例会纪要，汇总接口联调问题。部分查询涉及简称，需要产品人员提供完整术语。性能优化计划另行登记，本期记录没有提供并发量或延迟统计。\n",
+      "score": 0.5,
+      "metadata": {
+        "document_version_id": "7f7625fe-6b81-467d-ab98-61fe77be6a34"
+      },
+      "requirement_ids": [
+        "S1"
+      ]
+    },
+    {
+      "chunk_id": "5854c79e-a897-59c2-a1a0-1fa756a75901",
+      "candidate_id": "C901",
+      "content": "# 项目经历访谈记录\n\n候选人编号：C901\n访谈日期：2025 年 7 月 8 日\n\n## 星河项目职责\n\n访谈人：请说明星河项目期间的职责和分工。\n\nC901：2025 年 1 月至 6 月，我在星河项目中只担任检索模块开发成员，未担任项目总负责人。整体排期和交付协调由项目经理承担。我主要处理文档切片、检索接口和引用定位。\n\n访谈人：记录中的总负责人表述包含哪些工作。\n\nC901：我参与过例会和问题跟踪，但没有负责整项交付。模块范围和项目范围需要区分。\n\n## 后续工作\n\nC901：后续参与了来源链接检查，发现旧材料替换后需要保留原版本。我负责过问题复现，是否继续承担该模块尚未确定。\n",
+      "score": 0.5,
+      "metadata": {
+        "document_version_id": "c2717915-b0f6-43c8-bc87-76fddb0a1403"
+      },
+      "requirement_ids": [
+        "S1"
+      ]
+    }
+  ],
+  "evidence_packs": [
+    {
+      "schema_version": "2.0",
+      "candidate_id": "C901",
+      "requirements": [
+        {
+          "requirement_id": "S1",
+          "query": "在 2025 年 1 月至 6 月担任星河项目总负责人",
+          "required": true,
+          "status": "conflicting",
+          "reason": "evidence_review",
+          "extraction_status": "succeeded",
+          "facts": [
+            {
+              "event": "星河项目",
+              "period": "2025-01/2025-06",
+              "claim": "担任星河项目总负责人",
+              "answer": "yes",
+              "sources": [
+                {
+                  "citation_id": "e3332fcf-4c5d-5359-a426-b29436a5306b",
+                  "chunk_id": "e3332fcf-4c5d-5359-a426-b29436a5306b",
+                  "quote": "C901 在 2025 年 1 月至 6 月担任星河项目总负责人，负责排期和交付协调。"
+                },
+                {
+                  "citation_id": "45648b39-37f9-59ab-ac59-52f940fe4821",
+                  "chunk_id": "45648b39-37f9-59ab-ac59-52f940fe4821",
+                  "quote": "C901 在 2025 年 1 月至 6 月担任星河项目总负责人，负责排期和交付协调。"
+                }
+              ]
+            },
+            {
+              "event": "星河项目",
+              "period": "2025-01/2025-06",
+              "claim": "担任星河项目总负责人",
+              "answer": "no",
+              "sources": [
+                {
+                  "citation_id": "5854c79e-a897-59c2-a1a0-1fa756a75901",
+                  "chunk_id": "5854c79e-a897-59c2-a1a0-1fa756a75901",
+                  "quote": "C901：2025 年 1 月至 6 月，我在星河项目中只担任检索模块开发成员，未担任项目总负责人。"
+                }
+              ]
+            }
+          ],
+          "conflicts": [
+            [
+              0,
+              1
+            ]
+          ],
+          "missing_information": [],
+          "citations": [
+            {
+              "citation_id": "e3332fcf-4c5d-5359-a426-b29436a5306b",
+              "chunk_id": "e3332fcf-4c5d-5359-a426-b29436a5306b",
+              "candidate_id": "C901",
+              "document_id": "1fe5af5c-9b4b-40da-b4d4-5fb52064206a",
+              "document_title": "review",
+              "document_version_id": "bc8eca97-baf4-485a-86af-cb6753231d6f",
+              "version_no": 1,
+              "version_state": "current",
+              "permission_scope": "hr_private",
+              "content": "# 星河项目交付复盘\n\n项目周期：2025 年 1 月至 2025 年 6 月\n候选人编号：C901\n材料日期：2025 年 7 月 3 日\n\n## 项目范围\n\n星河项目为内部知识检索试点，材料来自产品使用手册、历史工单和交付说明。项目组先整理文档目录，再选择两个业务小组参与试用。试点阶段只提供信息查询，审批操作继续由业务系统处理。\n\n## 工作分工\n\nC901 在 2025 年 1 月至 6 月担任星河项目总负责人，负责排期和交付协调。检索模块由两名工程师开发，测试人员整理问题清单，产品人员确认试点范围。每周例会记录由轮值成员维护。\n\n## 交付记录\n\n三月完成第一轮文档导入，四月开放试用，六月整理验收问题。试用反馈包括来源链接失效、术语缩写难以命中、同一问题出现不同版本答案。六月的工作记录列出来源版本检查和关键词召回两个后续事项。\n",
+              "heading_path": [
+                "星河项目交付复盘"
+              ],
+              "markdown_start": 0,
+              "markdown_end": 373,
+              "source_locators": [],
+              "page_start": null,
+              "page_end": null,
+              "timestamp_start": null,
+              "timestamp_end": null,
+              "parser_version": "lesson09-v1",
+              "parent_chunk_id": null,
+              "requirement_ids": [
+                "S1"
+              ]
+            },
+            {
+              "citation_id": "45648b39-37f9-59ab-ac59-52f940fe4821",
+              "chunk_id": "45648b39-37f9-59ab-ac59-52f940fe4821",
+              "candidate_id": "C901",
+              "document_id": "8c9fa28e-b717-4737-af08-27f33bf74722",
+              "document_title": "report",
+              "document_version_id": "7f7625fe-6b81-467d-ab98-61fe77be6a34",
+              "version_no": 1,
+              "version_state": "current",
+              "permission_scope": "hr_private",
+              "content": "# 半年度工作记录\n\n记录周期：2025 年 1 月至 2025 年 6 月\n候选人编号：C901\n\n## 星河项目\n\nC901 在 2025 年 1 月至 6 月担任星河项目总负责人，负责排期和交付协调。试点期间参加业务访谈，整理查询问题，跟踪材料导入与验收问题。\n\n六月安排知识库材料核对，对过期使用手册登记替换版本。来源定位需要保留文档标题和段落位置，避免业务人员根据截取片段误解操作步骤。后续计划把来源版本显示加入查询界面。\n\n## 日常协作\n\n协助整理每周例会纪要，汇总接口联调问题。部分查询涉及简称，需要产品人员提供完整术语。性能优化计划另行登记，本期记录没有提供并发量或延迟统计。\n",
+              "heading_path": [
+                "半年度工作记录"
+              ],
+              "markdown_start": 0,
+              "markdown_end": 298,
+              "source_locators": [],
+              "page_start": null,
+              "page_end": null,
+              "timestamp_start": null,
+              "timestamp_end": null,
+              "parser_version": "lesson09-v1",
+              "parent_chunk_id": null,
+              "requirement_ids": [
+                "S1"
+              ]
+            },
+            {
+              "citation_id": "5854c79e-a897-59c2-a1a0-1fa756a75901",
+              "chunk_id": "5854c79e-a897-59c2-a1a0-1fa756a75901",
+              "candidate_id": "C901",
+              "document_id": "42a1ccd5-0aa1-4bf7-a563-2583f21c6df7",
+              "document_title": "interview",
+              "document_version_id": "c2717915-b0f6-43c8-bc87-76fddb0a1403",
+              "version_no": 1,
+              "version_state": "current",
+              "permission_scope": "hr_private",
+              "content": "# 项目经历访谈记录\n\n候选人编号：C901\n访谈日期：2025 年 7 月 8 日\n\n## 星河项目职责\n\n访谈人：请说明星河项目期间的职责和分工。\n\nC901：2025 年 1 月至 6 月，我在星河项目中只担任检索模块开发成员，未担任项目总负责人。整体排期和交付协调由项目经理承担。我主要处理文档切片、检索接口和引用定位。\n\n访谈人：记录中的总负责人表述包含哪些工作。\n\nC901：我参与过例会和问题跟踪，但没有负责整项交付。模块范围和项目范围需要区分。\n\n## 后续工作\n\nC901：后续参与了来源链接检查，发现旧材料替换后需要保留原版本。我负责过问题复现，是否继续承担该模块尚未确定。\n",
+              "heading_path": [
+                "项目经历访谈记录"
+              ],
+              "markdown_start": 0,
+              "markdown_end": 298,
+              "source_locators": [],
+              "page_start": null,
+              "page_end": null,
+              "timestamp_start": null,
+              "timestamp_end": null,
+              "parser_version": "lesson09-v1",
+              "parent_chunk_id": null,
+              "requirement_ids": [
+                "S1"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schema_version": "2.0",
+      "candidate_id": "C902",
+      "requirements": [
+        {
+          "requirement_id": "S1",
+          "query": "在 2025 年 1 月至 6 月担任星河项目总负责人",
+          "required": true,
+          "status": "missing",
+          "reason": "no_accessible_hits",
+          "extraction_status": "not_run",
+          "facts": [],
+          "conflicts": [],
+          "missing_information": [],
+          "citations": []
+        }
+      ]
+    }
+  ],
+  "evidence_status": "reviewed"
+}

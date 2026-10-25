@@ -1,0 +1,720 @@
+.app {
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif
+}
+
+.side {
+  width: 226px;
+  padding: 20px 13px;
+  background: #10271f;
+  display: flex;
+  flex-direction: column;
+  transition: width .2s ease, padding .2s ease
+}
+
+main {
+  margin-left: 226px;
+  transition: margin-left .2s ease
+}
+
+.brand img {
+  width: 35px;
+  height: 35px;
+  padding: 3px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #f3ffe2
+}
+
+.brand {
+  padding: 0 8px 22px
+}
+
+.sideToggle {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  align-self: flex-end;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #365247;
+  border-radius: 999px;
+  color: #d8e5df;
+  background: #17362c;
+  cursor: pointer
+}
+
+.sideToggle svg {
+  width: 16px
+}
+
+.brand b {
+  font-weight: 700
+}
+
+.brand small {
+  color: #8ca198;
+  font-size: 10px
+}
+
+.side nav {
+  margin-top: 18px
+}
+
+.side nav button {
+  padding: 10px 11px;
+  margin: 2px 0;
+  border-radius: 9px;
+  color: #b8cbc1;
+  font-size: 14px
+}
+
+.side nav button.active {
+  color: white;
+  background: #234638;
+  box-shadow: inset 3px 0 #def17d
+}
+
+.navIcon {
+  width: 19px;
+  display: inline-block;
+  color: inherit;
+  font-size: 16px;
+  font-style: normal;
+  text-align: center
+}
+
+.currentUser {
+  display: flex;
+  align-items: center;
+  gap: 9px
+}
+
+.currentUser b {
+  font-size: 13px
+}
+
+.currentUser span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: var(--green);
+  font-size: 11px
+}
+
+.env {
+  position: static;
+  margin-top: 18px
+}
+
+.env div {
+  display: flex;
+  align-items: center
+}
+
+.env small {
+  display: block;
+  margin: 3px 0 0 14px;
+  color: #91a79d
+}
+
+.app.sidebarCollapsed .side {
+  width: 84px;
+  padding-inline: 10px
+}
+
+.app.sidebarCollapsed main {
+  margin-left: 84px
+}
+
+.app.sidebarCollapsed .brand {
+  justify-content: center;
+  padding-inline: 0
+}
+
+.app.sidebarCollapsed .brand div,
+.app.sidebarCollapsed .side nav button span,
+.app.sidebarCollapsed .env {
+  display: none
+}
+
+.app.sidebarCollapsed .side nav button {
+  justify-content: center;
+  gap: 0;
+  padding-inline: 0
+}
+
+.app.sidebarCollapsed .sideToggle {
+  align-self: center
+}
+
+.libraryHead {
+  align-items: center
+}
+
+.librarySubtitle {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 5px
+}
+
+.librarySubtitle label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap
+}
+
+.librarySubtitle select {
+  min-width: 280px;
+  padding: 8px 34px 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #304139;
+  background: white
+}
+
+.documents.full {
+  width: 100%
+}
+
+.knowledgeBaseManager {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white
+}
+
+.managerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px
+}
+
+.managerHead h2 {
+  margin: 0 0 4px;
+  font-size: 16px
+}
+
+.managerHead p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.knowledgeBaseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px
+}
+
+.knowledgeBaseCard {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfcfb
+}
+
+.knowledgeBaseCard.active {
+  border-color: #77a893;
+  box-shadow: 0 0 0 2px #e2f1ea
+}
+
+.knowledgeBaseMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 13px;
+  border: 0;
+  color: #253a31;
+  background: transparent;
+  text-align: left
+}
+
+.knowledgeBaseMain > svg {
+  flex: 0 0 auto;
+  width: 20px;
+  color: var(--green)
+}
+
+.knowledgeBaseMain span,
+.knowledgeBaseMain b,
+.knowledgeBaseMain small {
+  display: block
+}
+
+.knowledgeBaseMain span {
+  min-width: 0
+}
+
+.knowledgeBaseMain small {
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.knowledgeBaseMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px
+}
+
+.knowledgeBaseMeta span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #eef4f1
+}
+
+.iconDanger {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border: 1px solid #e4b6b6;
+  border-radius: 7px;
+  color: #a14545;
+  background: white;
+  place-items: center
+}
+
+.iconDanger svg {
+  width: 14px
+}
+
+.iconDanger:disabled {
+  border-color: var(--line);
+  color: #aab4af;
+  background: #f4f6f5
+}
+
+.knowledgeBaseDialog {
+  max-width: 520px
+}
+
+.knowledgeBaseDialog textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical
+}
+
+.dialogHint {
+  margin: -8px 0 16px;
+  color: var(--muted);
+  font-size: 13px
+}
+
+.filterSelect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.filterSelect select {
+  min-width: 132px;
+  padding: 8px 34px 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #304139;
+  background: white
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  background: white;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.pagination + .pagination {
+  border-top: 1px solid var(--line)
+}
+
+.pagination div {
+  display: flex;
+  gap: 8px
+}
+
+.pagination button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: #3c4c45;
+  background: white
+}
+
+.pagination button:not(:disabled):hover {
+  color: var(--green);
+  border-color: #91b5a5
+}
+
+.pagination button:disabled {
+  color: #abb5b0;
+  background: #f6f8f7
+}
+
+.pagination svg {
+  width: 14px
+}
+
+.ghost.danger {
+  border-color: #d78d8d;
+  color: #a14545
+}
+
+.small {
+  padding: 6px 10px;
+  font-size: 12px
+}
+
+.roster,
+.docs {
+  border-radius: 0
+}
+
+.docs .tr {
+  grid-template-columns: .32fr 1.8fr .7fr .7fr .8fr .85fr .46fr
+}
+
+.docRow {
+  min-width: 1120px
+}
+
+.checkCell {
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.checkCell input {
+  width: 16px;
+  height: 16px
+}
+
+.recallLab {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f6faf8)
+}
+
+.recallHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px
+}
+
+.recallHead h3 {
+  margin: 0 0 4px;
+  font-size: 18px
+}
+
+.recallHead p,
+.secondaryText {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6
+}
+
+.recallFilters {
+  display: grid;
+  grid-template-columns: 1.6fr repeat(4, minmax(0, .8fr));
+  gap: 10px;
+  align-items: end
+}
+
+.recallFilters label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px
+}
+
+.recallFilters input,
+.recallFilters select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white
+}
+
+.recallFilters .wide {
+  grid-column: auto
+}
+
+.recallEmpty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 10px;
+  color: var(--muted);
+  background: #eef5f2
+}
+
+.recallEmpty svg {
+  width: 18px
+}
+
+.recallResults {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px
+}
+
+.recallCard {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white
+}
+
+.recallCard header,
+.recallCard footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px
+}
+
+.recallMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0
+}
+
+.recallMeta span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #465650;
+  font-size: 12px;
+  background: #eef4f1
+}
+
+.recallCard p {
+  margin: 0 0 12px;
+  color: #23322d;
+  line-height: 1.7
+}
+
+.recallCard code {
+  color: var(--muted)
+}
+
+.chunkControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) repeat(2, minmax(0, .8fr)) auto auto;
+  align-items: end;
+  gap: 9px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #f7faf8
+}
+
+.chunkHint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6
+}
+
+.chunkControls label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px
+}
+
+.chunkControls input {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white
+}
+
+.runSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0
+}
+
+.runSummary span {
+  padding: 7px 9px;
+  border-radius: 7px;
+  color: var(--muted);
+  background: #eef4f1;
+  font-size: 11px
+}
+
+.runSummary b {
+  color: var(--green)
+}
+
+.chunkCard {
+  margin: 10px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white
+}
+
+.chunkCard header,
+.chunkCard footer {
+  position: static;
+  height: auto;
+  padding: 0;
+  border: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start
+}
+
+.chunkCard header span {
+  color: var(--green);
+  font-weight: 750
+}
+
+.chunkCard header em,
+.chunkCard>small,
+.chunkCard footer {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal
+}
+
+.chunkCard p {
+  white-space: pre-wrap;
+  line-height: 1.65
+}
+
+.chunkCard footer {
+  justify-content: space-between;
+  overflow-wrap: anywhere
+}
+
+.chunkCard code {
+  max-width: 65%;
+  white-space: normal
+}
+
+.chunkError {
+  color: #aa3d3d
+}
+
+.drawerStatusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.drawerStatusRow span:not(.status) {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eef4f1
+}
+
+.empty.compact {
+  padding: 32px 20px
+}
+
+@media (max-width: 900px) {
+  .sideToggle {
+    display: none
+  }
+
+  .side {
+    width: 68px
+  }
+
+  main {
+    margin-left: 68px
+  }
+
+  .side .brand div {
+    display: none
+  }
+
+  .side nav button span {
+    display: none
+  }
+
+  .librarySubtitle {
+    align-items: flex-start;
+    flex-direction: column
+  }
+
+  .librarySubtitle select {
+    min-width: 220px;
+    max-width: calc(100vw - 150px)
+  }
+
+  .recallHead,
+  .libraryHead {
+    display: block
+  }
+
+  .recallHead .ghost,
+  .libraryHead .actions {
+    margin-top: 10px
+  }
+
+  .recallFilters,
+  .chunkControls {
+    grid-template-columns: 1fr
+  }
+
+  .docs .tr {
+    min-width: 1180px
+  }
+}
+
+.evidencePackPanel { margin-bottom: 20px; padding: 16px; border: 1px solid #dce5ed; border-radius: 12px; }
+.evidencePackPanel summary { cursor: pointer; margin-bottom: 12px; font-weight: 600; }
+.evidencePackPanel .recallCard { margin: 12px 0; padding: 16px; }
+.evidencePackPanel button { white-space: normal; text-align: left; margin: 4px; }
+.evidencePackPanel .drawer { padding: 24px; overflow-y: auto; }
+.evidencePackPanel .citationText { white-space: pre-wrap; overflow-wrap: anywhere; }
+.evidencePackPanel .citationText mark { padding: 1px 2px; border-radius: 3px; background: #ffe58f; color: inherit; }

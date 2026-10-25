@@ -1,0 +1,113 @@
+services:
+  postgres:
+    image: docker.1ms.run/postgres:15-alpine
+    environment:
+      POSTGRES_DB: talent_docs
+      POSTGRES_USER: talent
+      POSTGRES_PASSWORD: talent_dev_password
+    ports:
+      - "127.0.0.1:15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talent -d talent_docs"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: docker.1ms.run/minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: talent_minio
+      MINIO_ROOT_PASSWORD: talent_minio_password
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: docker.1ms.run/redis:6-alpine
+    ports:
+      - "127.0.0.1:16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mineru:
+    build: ./backend/mineru-runtime
+    ports:
+      - "127.0.0.1:18001:18001"
+    volumes:
+      - mineru_models:/root/.cache
+    environment:
+      # 国内服务器推荐用 modelscope，下载更快
+      MINERU_MODEL_SOURCE: ${MINERU_MODEL_SOURCE:-modelscope}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:18001/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+  backend:
+    image: talent-eval-agents-course-backend:latest
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://talent:talent_dev_password@postgres:5432/talent_docs
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: http://127.0.0.1:19000
+      S3_ACCESS_KEY: talent_minio
+      S3_SECRET_KEY: talent_minio_password
+      S3_BUCKET: talent-documents
+      MINERU_URL: http://mineru:18001
+    ports:
+      - "127.0.0.1:18080:18080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      mineru:
+        condition: service_healthy
+
+  worker:
+    image: talent-eval-agents-course-backend:latest
+    build: ./backend
+    command: ["uv", "run", "python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://talent:talent_dev_password@postgres:5432/talent_docs
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: http://127.0.0.1:19000
+      S3_ACCESS_KEY: talent_minio
+      S3_SECRET_KEY: talent_minio_password
+      S3_BUCKET: talent-documents
+      MINERU_URL: http://mineru:18001
+    depends_on:
+      backend:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:15173:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  minio_data:
+  mineru_models:
