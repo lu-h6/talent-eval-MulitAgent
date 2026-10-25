@@ -1,0 +1,8 @@
+2026-10-25 18:04:44 | INFO | app.main | health_check status=ok
+2026-10-25 18:04:44 | INFO | app.main | http_request method=GET path=/api/health status=200 duration_ms=5.34
+2026-10-25 18:04:45 | INFO | app.main | http_request method=GET path=/openapi.json status=200 duration_ms=96.24
+2026-10-25 18:04:53 | INFO | app.main | http_request method=GET path=/api/employees status=200 duration_ms=202.74
+2026-10-25 18:04:53 | INFO | app.main | http_request method=GET path=/api/knowledge-bases status=200 duration_ms=15.19
+2026-10-25 18:04:53 | INFO | app.main | http_request method=GET path=/api/documents status=200 duration_ms=66.74
+2026-10-25 18:04:53 | INFO | app.main | http_request method=GET path=/api/job-descriptions status=200 duration_ms=14.95
+2026-10-25 18:04:56 | INFO | app.main | http_request method=GET path=/api/job-descriptions status=200 duration_ms=8.28
