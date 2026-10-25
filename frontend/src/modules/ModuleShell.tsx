@@ -10,7 +10,7 @@ import {
 import { MODULE_META, type ModuleId } from "./nav";
 
 type NavItem = {
-  id: ModuleId | "profiles";
+  id: ModuleId;
   label: string;
   icon: React.ReactNode;
 };
@@ -42,7 +42,7 @@ export function ModuleShell({
   const meta = MODULE_META[activeModule];
 
   return (
-    <div className={`app${collapsed ? " sidebarCollapsed" : ""}`}>
+    <div className={`app module-${activeModule}${collapsed ? " sidebarCollapsed" : ""}`}>
       <aside className="side">
         <div className="brand">
           <img src="/talentos-favicon.png" alt="TalentOS" />
@@ -53,29 +53,14 @@ export function ModuleShell({
         </div>
         <nav>
           {NAV_ITEMS.map((item) => {
-            if (item.id === "profiles") {
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    window.location.href = "/";
-                  }}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </button>
-              );
-            }
-            const moduleId = item.id as ModuleId;
-            const active = moduleId === activeModule;
+            const active = item.id === activeModule;
             return (
               <button
                 key={item.id}
                 type="button"
                 className={active ? "active" : ""}
                 aria-current={active ? "page" : undefined}
-                onClick={() => onNavigate(moduleId)}
+                onClick={() => onNavigate(item.id)}
               >
                 {item.icon}
                 <span>{item.label}</span>

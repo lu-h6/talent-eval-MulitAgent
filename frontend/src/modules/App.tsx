@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { LegacyProfiles } from "./LegacyProfiles";
 import { ModuleShell } from "./ModuleShell";
 import { MODULE_META, MODULE_ORDER, navigateToModule, parseModuleHash, type ModuleId } from "./nav";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -17,13 +18,13 @@ export function App() {
 
   useEffect(() => {
     if (!window.location.hash) {
-      window.history.replaceState(null, "", "#dashboard");
+      window.history.replaceState(null, "", "#profiles");
       return;
     }
     const value = window.location.hash.replace(/^#/, "").split("?")[0];
     if (!MODULE_ORDER.includes(value as ModuleId)) {
-      window.history.replaceState(null, "", "#dashboard");
-      setActiveModule("dashboard");
+      window.history.replaceState(null, "", "#profiles");
+      setActiveModule("profiles");
     }
   }, []);
 
@@ -47,6 +48,7 @@ export function App() {
       onCollapseChange={setCollapsed}
       onNavigate={navigate}
     >
+      <LegacyProfiles active={activeModule === "profiles"} />
       {activeModule === "dashboard" && <DashboardPage onNavigate={navigate} />}
       {activeModule === "recommendation" && <RecommendationPage />}
       {activeModule === "evaluation" && <EvaluationCenterPage />}

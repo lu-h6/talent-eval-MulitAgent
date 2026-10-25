@@ -7,7 +7,12 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import { apiRequest, clarificationItems } from "../api";
+import {
+  apiRequest,
+  clarificationItems,
+  errorDetail as extractErrorDetail,
+  friendlyErrorMessage,
+} from "../api";
 import { CitationDrawer } from "../components/CitationDrawer";
 import { RecommendationResults } from "../components/RecommendationResults";
 import type { CandidateProfile, CandidateProfilesResponse, TalentSearchResponse } from "../types";
@@ -42,6 +47,7 @@ export function RecommendationPage() {
   const [form, setForm] = useState<FormValues>(DEFAULTS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [detailText, setDetailText] = useState("");
   const [clarifications, setClarifications] = useState<{ expression: string; reason: string }[]>([]);
   const [result, setResult] = useState<TalentSearchResponse | null>(null);
   const [profiles, setProfiles] = useState<Record<string, CandidateProfile>>({});
@@ -65,11 +71,13 @@ export function RecommendationPage() {
     const message = validate();
     if (message) {
       setError(message);
+      setDetailText("");
       return;
     }
 
     setBusy(true);
     setError("");
+    setDetailText("");
     setClarifications([]);
     try {
       const data = await apiRequest<TalentSearchResponse>("/talent-search", {
@@ -108,11 +116,12 @@ export function RecommendationPage() {
       }
     } catch (err) {
       const items = clarificationItems(err);
+      setDetailText(extractErrorDetail(err));
       if (items.length > 0) {
         setClarifications(items);
         setError("需求需要补充或澄清后再执行");
       } else {
-        setError(err instanceof Error ? err.message : "人才检索失败");
+        setError(friendlyErrorMessage(err));
       }
     } finally {
       setBusy(false);
@@ -249,6 +258,7 @@ export function RecommendationPage() {
                 setResult(null);
                 setProfiles({});
                 setError("");
+                setDetailText("");
                 setClarifications([]);
               }}
             >
@@ -267,6 +277,12 @@ export function RecommendationPage() {
                   {item.expression}：{item.reason}
                 </p>
               ))}
+              {detailText && (
+                <details className="errorDetails">
+                  <summary>查看技术详情</summary>
+                  <pre>{detailText}</pre>
+                </details>
+              )}
             </div>
           </div>
         )}

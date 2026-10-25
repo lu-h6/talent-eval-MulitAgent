@@ -1,12 +1,17 @@
-export type ModuleId = "dashboard" | "recommendation" | "evaluation";
+export type ModuleId = "dashboard" | "profiles" | "recommendation" | "evaluation";
 
-export const MODULE_ORDER: ModuleId[] = ["dashboard", "recommendation", "evaluation"];
+export const MODULE_ORDER: ModuleId[] = ["dashboard", "profiles", "recommendation", "evaluation"];
 
 export const MODULE_META: Record<ModuleId, { label: string; subtitle: string; description: string }> = {
   dashboard: {
     label: "工作台",
     subtitle: "运营总览",
     description: "汇总人才档案、知识库与材料处理进度，快速进入核心工作流。",
+  },
+  profiles: {
+    label: "人才档案",
+    subtitle: "员工档案",
+    description: "维护结构化员工信息，并管理每名员工关联的档案材料。",
   },
   recommendation: {
     label: "评估与推荐",
@@ -24,7 +29,7 @@ const modules = new Set<string>(MODULE_ORDER);
 
 export function parseModuleHash(hash: string): ModuleId {
   const value = hash.replace(/^#/, "").split("?")[0].trim();
-  return modules.has(value) ? (value as ModuleId) : "dashboard";
+  return modules.has(value) ? (value as ModuleId) : "profiles";
 }
 
 export function navigateToModule(module: ModuleId) {

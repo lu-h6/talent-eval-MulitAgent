@@ -74,6 +74,21 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   return payload as T;
 }
 
+export function friendlyErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : "请求失败";
+  if (/401|invalid[_-]?api[_-]?key|api[_-]?key.*(blocked|invalid)|AuthenticationError|Incorrect API key/i.test(message)) {
+    return "模型服务鉴权失败：请检查后端 DASHSCOPE_API_KEY 是否有效后重试。";
+  }
+  if (/Embedding 服务未配置/i.test(message)) return "Embedding 服务未配置，无法执行检索。";
+  if (/Rerank 服务未配置/i.test(message)) return "Rerank 服务未配置，无法执行混合检索。";
+  if (/模型未配置|查询计划模型未配置/i.test(message)) return "查询计划模型未配置，请联系管理员检查模型设置。";
+  return message;
+}
+
+export function errorDetail(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function clarificationItems(error: unknown): { expression: string; reason: string }[] {
   if (!(error instanceof ApiError)) return [];
   const detail = (error.payload as { detail?: unknown } | null)?.detail;

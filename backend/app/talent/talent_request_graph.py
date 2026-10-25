@@ -16,7 +16,9 @@ from app.retrieval.query_plan import Clarification, FilterCondition, QueryPlan, 
 from app.talent.talent_decision_graph import DecisionContext
 from app.talent.talent_tools import TalentToolContext, TalentToolService
 
+
 RequestInputMode = Literal["detailed_requirement", "job_name"]
+
 RequestStatus = Literal[
     "received",  # 已接收
     "request_understood",  # 请求已理解
@@ -67,16 +69,16 @@ class TalentRequestInput(TypedDict):
 
 class TalentRequestOutput(TypedDict):
     """请求处理子图输出。"""
-    status: RequestStatus
-    input_mode: RequestInputMode
-    job_matches: list[JobMatch]
-    selected_job: JobMatch | None
-    talent_request: dict[str, Any]
-    query_plan: dict[str, Any]
-    candidate_ids: list[str]
-    condition_revisions: list[dict[str, Any]]
-    plan_version: int
-    clarifications: list[dict[str, str]]
+    status: RequestStatus #
+    input_mode: RequestInputMode # 输入模式
+    job_matches: list[JobMatch] # 岗位匹配列表
+    selected_job: JobMatch | None # 最终选定岗位
+    talent_request: dict[str, Any] # 结构化人才请求
+    query_plan: dict[str, Any] # 查询计划
+    candidate_ids: list[str] # 候选人工号列表
+    condition_revisions: list[dict[str, Any]] # 条件修订记录
+    plan_version: int # 修订版本号
+    clarifications: list[dict[str, str]] # 澄清问题
     errors: list[str]
 
 
@@ -97,9 +99,9 @@ class TalentRequestState(TypedDict, total=False):
     errors: list[str]  # 错误列表
 
 
-RequestInterpreter = Callable[[str, JobMatch | None], TalentRequestDraft]
-JobLookup = Callable[[str, DecisionContext], list[JobMatch]]
-CandidateFilter = Callable[[list[FilterCondition], DecisionContext], list[str]]
+RequestInterpreter = Callable[[str, JobMatch | None], TalentRequestDraft] # 请求解释器
+JobLookup = Callable[[str, DecisionContext], list[JobMatch]] # 岗位查找函数
+CandidateFilter = Callable[[list[FilterCondition], DecisionContext], list[str]] # 候选人筛选函数
 
 
 def _receive_request(state: TalentRequestState, runtime: Runtime[DecisionContext]) -> dict[str, Any]:
@@ -128,9 +130,14 @@ def _receive_request(state: TalentRequestState, runtime: Runtime[DecisionContext
 
 
 def _interpret_input(request_interpreter: RequestInterpreter):
-    """构造“解释输入”节点：调用解释器生成结构化草稿。"""
+    """
+    构造“解释输入”节点：调用解释器生成结构化草稿。
+    """
 
     def interpret_input(state: TalentRequestState) -> dict[str, Any]:
+        """
+        解释输入节点：调用解释器生成结构化草稿。
+        """
         draft = request_interpreter(state["request_text"], None)
         return {
             "draft": draft.model_dump(mode="json"),
@@ -142,12 +149,16 @@ def _interpret_input(request_interpreter: RequestInterpreter):
 
 
 def _route_input(state: TalentRequestState) -> Literal["lookup_jobs", "build_plan"]:
-    """按输入模式路由：岗位名 → 查找岗位；详细要求 → 直接编译计划。"""
+    """
+    按输入模式路由：岗位名 → 查找岗位；详细要求 → 直接编译计划。
+    """
     return "lookup_jobs" if state["input_mode"] == "job_name" else "build_plan"
 
 
 def _lookup_jobs(job_lookup: JobLookup):
-    """构造“查找岗位”节点：调用 JD 查找服务并按租户返回命中列表。"""
+    """
+    构造“查找岗位”节点：调用 JD 查找服务并按租户返回命中列表。
+    """
 
     def lookup_jobs(state: TalentRequestState, runtime: Runtime[DecisionContext]) -> dict[str, Any]:
         job_query = str(state["draft"].get("job_query") or state["request_text"])

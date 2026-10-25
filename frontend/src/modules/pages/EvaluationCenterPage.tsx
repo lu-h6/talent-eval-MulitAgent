@@ -7,7 +7,7 @@ import {
   Search,
   Timer,
 } from "lucide-react";
-import { apiRequest } from "../api";
+import { apiRequest, friendlyErrorMessage } from "../api";
 import { CitationDrawer } from "../components/CitationDrawer";
 import {
   documentTypeLabel,
@@ -55,7 +55,7 @@ export async function runTimedSearch<T>(
     return {
       status: "error",
       durationMs: now() - startedAt,
-      error: error instanceof Error ? error.message : "请求失败",
+      error: friendlyErrorMessage(error),
     };
   }
 }

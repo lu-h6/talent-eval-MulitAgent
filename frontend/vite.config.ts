@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL("./index.html", import.meta.url)),
         modules: fileURLToPath(new URL("./modules.html", import.meta.url)),
+        legacy: fileURLToPath(new URL("./legacy.html", import.meta.url)),
       },
     },
   },

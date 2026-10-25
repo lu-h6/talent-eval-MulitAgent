@@ -177,6 +177,7 @@
 .dashboardColumns {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  align-items: start;
   gap: 16px;
 }
 
@@ -548,6 +549,30 @@
   margin: 0;
   font-size: 12px;
   line-height: 1.6;
+}
+
+.errorDetails {
+  margin-top: 4px;
+}
+
+.errorDetails summary {
+  color: #8a5a22;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.errorDetails pre {
+  max-height: 180px;
+  margin: 6px 0 0;
+  padding: 9px;
+  overflow: auto;
+  border: 1px solid #efd8bd;
+  border-radius: 7px;
+  color: #6e4a20;
+  background: #fffdf9;
+  font: 11px/1.55 Consolas, "Courier New", monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .inlineAlert.compact {
@@ -1246,4 +1271,63 @@
   .requirementItem em {
     grid-column: 2;
   }
+}
+
+/* ---- 人才档案：挂载旧应用到新壳内，切页不刷新 ---- */
+
+.app.module-profiles > main > header {
+  display: none;
+}
+
+.app.module-profiles > main > .content {
+  max-width: none;
+  padding: 0;
+}
+
+.legacyPane {
+  display: block;
+}
+
+.legacyPane.legacyHidden {
+  display: none;
+}
+
+#legacy-root .side {
+  display: none !important;
+}
+
+#legacy-root main {
+  margin-left: 0 !important;
+}
+
+#legacy-root .app {
+  min-height: 0;
+}
+
+#legacy-root .content {
+  max-width: none;
+}
+
+.legacyLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 240px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* 档案资料库顶部按钮在窄宽度下换行，而不是把中文竖排 */
+#legacy-root .libraryHead {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+#legacy-root .libraryHead .actions {
+  flex-wrap: wrap;
+}
+
+#legacy-root .libraryHead .actions button {
+  white-space: nowrap;
 }
