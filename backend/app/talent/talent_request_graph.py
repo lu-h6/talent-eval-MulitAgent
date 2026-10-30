@@ -171,7 +171,15 @@ def _lookup_jobs(job_lookup: JobLookup):
 def _route_job_matches(
         state: TalentRequestState,
 ) -> Literal["select_exact_job", "confirm_job", "no_job_match"]:
-    """按命中结果路由：唯一精确匹配直接选中；多个需人工确认；无则未命中。"""
+    """
+    按命中结果路由：唯一精确匹配直接选中；多个需人工确认；无则未命中。
+    Args:
+        state (TalentRequestState): 包含岗位匹配列表的请求状态。
+    Returns:
+       选择 "select_exact_job" 时，唯一精确匹配岗位。
+       选择 "confirm_job" 时，多个岗位匹配，需人工确认。
+       选择 "no_job_match" 时，无岗位匹配。
+    """
     exact_matches = [item for item in state["job_matches"] if item["match_type"] == "exact"]
     if len(exact_matches) == 1:
         return "select_exact_job"
@@ -181,7 +189,13 @@ def _route_job_matches(
 
 
 def _select_exact_job(state: TalentRequestState) -> dict[str, Any]:
-    """唯一精确匹配时自动选中岗位。"""
+    """
+    唯一精确匹配时自动选中岗位。
+    Args:
+        state (TalentRequestState): 包含岗位匹配列表的请求状态。
+    Returns:
+        dict[str, Any]: 包含选中岗位的响应状态。
+    """
     selected = next(item for item in state["job_matches"] if item["match_type"] == "exact")
     return {"selected_job": selected, "status": "job_confirmed"}
 
@@ -221,6 +235,20 @@ def _confirm_job(state: TalentRequestState) -> dict[str, Any]:
     if selected is None:
         raise ValueError("恢复数据中的 job_code 不在待确认岗位列表中")
     return {"selected_job": selected, "status": "job_confirmed"}
+
+
+def _no_job_match(state: TalentRequestState) -> dict[str, Any]:
+    """未找到岗位：记录澄清信息并结束。"""
+    clarification = {
+        "expression": state["request_text"],
+        "reason": "未找到可确认的岗位 JD",
+    }
+    return {
+        "query_plan": {},
+        "talent_request": {},
+        "clarifications": [clarification],
+        "status": "no_job_match",
+    }
 
 
 def _route_job_confirmation(state: TalentRequestState) -> str:
@@ -283,18 +311,6 @@ def _build_plan(state: TalentRequestState) -> dict[str, Any]:
     }
 
 
-def _no_job_match(state: TalentRequestState) -> dict[str, Any]:
-    """未找到岗位：记录澄清信息并结束。"""
-    clarification = {
-        "expression": state["request_text"],
-        "reason": "未找到可确认的岗位 JD",
-    }
-    return {
-        "query_plan": {},
-        "talent_request": {},
-        "clarifications": [clarification],
-        "status": "no_job_match",
-    }
 
 
 # ---------------------------------------------------------------------------

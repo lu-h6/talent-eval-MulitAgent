@@ -41,7 +41,7 @@ class TransientToolError(RuntimeError):
     """代表可重试的瞬时性工具错误（如依赖未就绪/暂时不可用）。"""
     pass
 
-
+# 审计落盘策略
 class InMemoryAuditSink:
     """内存版审计落盘（用于测试或默认场景）。"""
 
@@ -260,7 +260,7 @@ class ToolExecutor:
                 )
                 raise
             finally:
-                pool.shutdown(wait=False, cancel_futures=True)
+                pool.shutdown(wait=False, cancel_futures=True)  # 线程池资源回收
 
         # 重试耗尽：打开熔断并降级返回“依赖不可用”
         self.circuit_breaker.fail(name)
@@ -565,7 +565,14 @@ def build_candidate_provider(
     """
 
     def provider(request: dict[str, Any], decision_context: Any) -> list[str]:
-        # 从决策上下文构造工具调用上下文，并解析筛选条件后执行
+        """
+        从决策上下文构造工具调用上下文，并解析筛选条件后执行。
+        Args:
+            request (dict[str, Any]): 包含原始文本的请求。
+            decision_context (Any): 决策上下文，包含租户 ID 和权限范围。
+        Returns:
+            list[str]: 筛选后的候选人人工人工号列表。
+        """
         context = TalentToolContext(
             tenant_id=decision_context.tenant_id,
             permission_scopes=tuple(decision_context.permission_scopes),

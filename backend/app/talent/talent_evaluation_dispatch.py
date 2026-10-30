@@ -129,10 +129,7 @@ class TalentEvaluationDispatchState(TypedDict, total=False):
     errors: list[str]  # 错误列表
 
 
-DimensionGenerator = Callable[
-    [dict[str, Any], dict[str, Any]],
-    EvaluationDimensionPlan,
-]  # 维度生成器
+DimensionGenerator = Callable[[dict[str, Any], dict[str, Any]],EvaluationDimensionPlan,]  # 维度生成器
 CandidateProvider = Callable[[dict[str, Any], DecisionContext], list[str]]  # 候选人提供者
 BranchWorker = Callable[[AssessmentWorkItem, DecisionContext], BranchEvidenceDraft]  # 分支工作器
 ModelProvider = Callable[[], Any]  # 模型提供者
@@ -150,6 +147,7 @@ retrieval_hints 应给出可直接用于候选人证据检索的关键词组合�
 """.strip()
 
 class BranchExecutionError(RuntimeError):
+    """分支执行错误：包含错误码与消息。"""
     def __init__(self, code: str, message: str):
         super().__init__(message)
         self.code = code
@@ -161,7 +159,17 @@ def build_branch_evidence_provider(
     load_sources: EvidenceSourceLoader,
     extract: Callable[[dict[str, Any], list[dict[str, Any]]], Any],
 ):
-    """构造分支证据提供者：返回授权分块及 Candidate Evidence Pack 2.0。"""
+    """
+    构造分支证据提供者：返回授权分块及 Candidate Evidence Pack 2.0。
+
+    Args:
+        search: 证据检索函数
+        load_sources: 证据来源加载函数
+        extract: 证据抽取函数
+
+    Returns:
+        分支证据提供者
+    """
 
     def evidence_provider(
         *,
@@ -171,6 +179,19 @@ def build_branch_evidence_provider(
         permission_scopes: list[str],
         include_evidence_pack: bool,
     ) -> dict[str, Any]:
+        """
+        分支证据提供者：返回授权分块及 Candidate Evidence Pack 2.0。
+
+        Args:
+            query: 检索查询
+            candidate_ids: 候选人工号
+            tenant_id: 租户ID
+            permission_scopes: 权限范围
+            include_evidence_pack: 是否包含证据包
+
+        Returns:
+            分支证据提供者
+        """
         logger.info(
             "event=evidence_provider_started function=evidence_provider "
             "candidate_ids=%s query_chars=%s permission_scope_count=%s "
@@ -247,11 +268,29 @@ def build_branch_evidence_provider(
 def build_structured_dimension_generator(
     model_provider: ModelProvider,
 ) -> DimensionGenerator:
-    """构造维度生成器：由模型基于人才请求与查询计划生成评估维度计划。"""
+    """
+    构造维度生成器：由模型基于人才请求与查询计划生成评估维度计划。
+
+    Args:
+        model_provider: 模型提供者
+
+    Returns:
+        维度生成器
+    """
     def generate(
         talent_request: dict[str, Any],
         query_plan: dict[str, Any],
     ) -> EvaluationDimensionPlan:
+        """
+        维度生成器：由模型基于人才请求与查询计划生成评估维度计划。
+
+        Args:
+            talent_request: 人才请求
+            query_plan: 查询计划
+
+        Returns:
+            评估维度计划
+        """
         logger.info(
             "event=dimension_generation_started "
             "function=build_structured_dimension_generator.generate "
@@ -288,13 +327,18 @@ def build_structured_dimension_generator(
 
 
 def _branch_query(dimension: EvaluationDimension, requirement: str) -> str:
-    """按维度检索提示与要求关键词组合构建分支检索查询。"""
+    """
+    按维度检索提示与要求关键词组合构建分支检索查询。
+
+    """
     terms = list(dict.fromkeys([*dimension.retrieval_hints, requirement]))
     return " ".join(terms)[:500]
 
 
 def _citation_refs(raw_citations: list[Any]) -> list[dict[str, str]]:
-    """规范化证据引用列表（去重 chunk_id，并解析来源标签）。"""
+    """
+    规范化证据引用列表（去重 chunk_id，并解析来源标签）。
+    """
     refs: list[dict[str, str]] = []
     seen: set[str] = set()
     for raw in raw_citations:
@@ -326,7 +370,9 @@ def _missing_requirement(
     requirement: str,
     reason: str,
 ) -> RequirementEvidence:
-    """构造缺失证据的 RequirementEvidence（未运行抽取）。"""
+    """
+    构造缺失证据的 RequirementEvidence（未运行抽取）。
+    """
     return RequirementEvidence(
         requirement_id=requirement_id,
         query=query,
@@ -338,7 +384,9 @@ def _missing_requirement(
 
 
 def build_evidence_branch_worker(service: Any, executor: ToolExecutor) -> BranchWorker:
-    """构造证据分支工作器：无需额外 ReAct 循环即可准备评估就绪的证据。"""
+    """
+    构造证据分支工作器：无需额外 ReAct 循环即可准备评估就绪的证据。
+    """
 
     def branch_worker(
         work_item: AssessmentWorkItem,
@@ -366,7 +414,15 @@ def build_evidence_branch_worker(service: Any, executor: ToolExecutor) -> Branch
             index: int,
             requirement: str,
         ) -> tuple[RequirementEvidence, str | None, bool]:
-            """针对某条取证要求执行证据检索与抽取，返回（结果, call_id, 是否降级）。"""
+            """
+            针对某条取证要求执行证据检索与抽取，返回（结果, call_id, 是否降级）。
+            Args:
+                index: 证据要求索引
+                requirement: 证据要求
+
+            Returns:
+                证据结果、调用ID、是否降级
+            """
             requirement_id = f"{work_item.dimension_number}:{index}"
             query = _branch_query(work_item.dimension, requirement)
             logger.info(
@@ -379,7 +435,7 @@ def build_evidence_branch_worker(service: Any, executor: ToolExecutor) -> Branch
             # 通过执行器调用树工具检索证据（带重试/超时/熔断/审计）
             envelope = executor.execute(
                 "search_candidate_evidence",
-                lambda query=query: service.search_candidate_evidence(
+                lambda : service.search_candidate_evidence(
                     query,
                     [work_item.candidate_id],
                     context=tool_context,
@@ -540,7 +596,9 @@ def build_query_plan_candidate_provider(service: Any) -> CandidateProvider:
 def validate_dimension_plan(
     plan: EvaluationDimensionPlan,
 ) -> list[DimensionValidationIssue]:
-    """校验维度计划的权重合计必须为 100。"""
+    """
+    校验维度计划的权重合计必须为 100。
+    """
     total = sum(item.weight_percent for item in plan.dimensions)
     if total == 100:
         return []
@@ -705,7 +763,9 @@ def _prepare_work_items(max_work_items: int):
 def build_work_item_sends(
     work_items: list[dict[str, Any]],
 ) -> list[Send]:
-    """将工作项转换为 Send 指令，以并行分派给取证分支节点。"""
+    """
+    将工作项转换为 Send 指令，以并行分派给取证分支节点。
+    """
     logger.info(
         "event=work_items_dispatched function=build_work_item_sends "
         "work_item_count=%s task_ids=%s",
@@ -842,10 +902,13 @@ def build_talent_evaluation_dispatch_graph(
     branch_worker: BranchWorker,
     max_work_items: int = 24,
 ):
-    """组装并编译“评估分派执行”子图。
+    """
+    组装并编译“评估分派执行”子图。
 
     流程：接收输入 → 生成/校验维度 → （检索候选人）→ 准备工作项 →
     并行分派取证分支 → 汇总（finalize）。
+
+
     """
     if max_work_items < 1:
         raise ValueError("max_work_items 必须大于等于 1")
