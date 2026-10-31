@@ -201,15 +201,10 @@ class TalentEvaluationReportState(TypedDict, total=False):
 
 
 DimensionScorer = Callable[
-    [EvaluationDimension, BranchEvidenceDraft, list[EvidenceItem]],
-    DimensionJudgement,
-]
-ReportWriter = Callable[[list[CandidateAssessment], list[EvidenceItem]], ReportDraft]
-ConsistencyReviewer = Callable[
-    [list[DimensionAssessment], list[EvidenceItem]],
-    ConsistencyReview,
-]
-ModelProvider = Callable[[], Any]
+    [EvaluationDimension, BranchEvidenceDraft, list[EvidenceItem]], DimensionJudgement,]  # 维度评分函数
+ReportWriter = Callable[[list[CandidateAssessment], list[EvidenceItem]], ReportDraft]  # 报告写入函数
+ConsistencyReviewer = Callable[[list[DimensionAssessment], list[EvidenceItem]], ConsistencyReview,]  # 一致性审查函数
+ModelProvider = Callable[[], Any]  # 模型提供函数
 
 
 def branch_evidence_refs(branch: BranchEvidenceDraft) -> list[str]:
@@ -236,9 +231,11 @@ def branch_missing_information(branch: BranchEvidenceDraft) -> list[str]:
 
 
 def evidence_items_from_branches(
-    branches: list[BranchEvidenceDraft],
+        branches: list[BranchEvidenceDraft],
 ) -> list[EvidenceItem]:
-    """从各分支的证据引用中收集去重后的证据项，并分配模型短编号 E1..En。"""
+    """
+    从各分支的证据引用中收集去重后的证据项，并分配模型短编号 E1..En。
+    """
     items: dict[str, EvidenceItem] = {}
     for branch in branches:
         # 遍历分支内所有事实来源，按 chunk_id 去重录入
@@ -262,9 +259,11 @@ def evidence_items_from_branches(
 
 
 def _evidence_reference_maps(
-    evidence_items: list[EvidenceItem],
+        evidence_items: list[EvidenceItem],
 ) -> tuple[dict[str, str], dict[str, str]]:
-    """建立 chunk_id 与模型短编号间的双向映射，并校验短编号唯一性。"""
+    """
+    建立 chunk_id 与模型短编号间的双向映射，并校验短编号唯一性。
+    """
     chunk_to_model: dict[str, str] = {}
     model_to_chunk: dict[str, str] = {}
     for index, item in enumerate(evidence_items, start=1):
@@ -278,10 +277,12 @@ def _evidence_reference_maps(
 
 
 def _restore_evidence_refs(
-    evidence_refs: list[str],
-    model_to_chunk: dict[str, str],
+        evidence_refs: list[str],
+        model_to_chunk: dict[str, str],
 ) -> list[str]:
-    """将模型返回的短证据编号还原为内部 chunk_id，未知编号则抛错。"""
+    """
+    将模型返回的短证据编号还原为内部 chunk_id，未知编号则抛错。
+    """
     unknown = [ref_id for ref_id in evidence_refs if ref_id not in model_to_chunk]
     if unknown:
         raise ValueError(f"模型返回了未知证据编号: {', '.join(unknown)}")
@@ -289,9 +290,11 @@ def _restore_evidence_refs(
 
 
 def _model_evidence_payload(
-    evidence_items: list[EvidenceItem],
+        evidence_items: list[EvidenceItem],
 ) -> tuple[list[dict[str, str]], dict[str, str], dict[str, str]]:
-    """构造喂给模型的证据载荷（使用短编号），并返回双向映射。"""
+    """
+    构造喂给模型的证据载荷（使用短编号），并返回双向映射。
+    """
     chunk_to_model, model_to_chunk = _evidence_reference_maps(evidence_items)
     payload = [
         {
@@ -306,10 +309,12 @@ def _model_evidence_payload(
 
 
 def _branch_model_payload(
-    branch: BranchEvidenceDraft,
-    chunk_to_model: dict[str, str],
+        branch: BranchEvidenceDraft,
+        chunk_to_model: dict[str, str],
 ) -> dict[str, Any]:
-    """将分支证据转为模型可见的字典（内部编号替换为短编号）。"""
+    """
+    将分支证据转为模型可见的字典（内部编号替换为短编号）。
+    """
     return {
         "task_id": branch.task_id,
         "candidate_id": branch.candidate_id,
@@ -353,13 +358,14 @@ missing_items 只记录影响当前判断的缺失信息，conflicts 只记录�
 
 
 def build_structured_dimension_scorer(
-    model_provider: ModelProvider,
+        model_provider: ModelProvider,
 ) -> DimensionScorer:
     """构造结构化维度评分器：让模型依据锚点给出维度分数。"""
+
     def score(
-        dimension: EvaluationDimension,
-        branch: BranchEvidenceDraft,
-        evidence_items: list[EvidenceItem],
+            dimension: EvaluationDimension,
+            branch: BranchEvidenceDraft,
+            evidence_items: list[EvidenceItem],
     ) -> DimensionJudgement:
         model = model_provider()
         if model is None:
@@ -404,12 +410,13 @@ risks 只整理输入中已有的缺失、冲突、执行失败和置信度风�
 
 
 def build_structured_report_writer(
-    model_provider: ModelProvider,
+        model_provider: ModelProvider,
 ) -> ReportWriter:
     """构造结构化报告撰写器：让模型生成报告草稿。"""
+
     def write(
-        candidates: list[CandidateAssessment],
-        evidence_items: list[EvidenceItem],
+            candidates: list[CandidateAssessment],
+            evidence_items: list[EvidenceItem],
     ) -> ReportDraft:
         model = model_provider()
         if model is None:
@@ -479,13 +486,20 @@ dimension_numbers 记录发生冲突的维度序号，message 说明互相矛盾
 
 
 def build_structured_consistency_reviewer(
-    model_provider: ModelProvider,
+        model_provider: ModelProvider,
 ) -> ConsistencyReviewer:
     """构造结构化一致性检查器：让模型发现跨维度逻辑冲突。"""
+
     def review(
-        assessments: list[DimensionAssessment],
-        evidence_items: list[EvidenceItem],
+            assessments: list[DimensionAssessment],
+            evidence_items: list[EvidenceItem],
     ) -> ConsistencyReview:
+        """
+        构造结构化一致性检查器：让模型发现跨维度逻辑冲突。
+        :param assessments: 待检查的维度评估列表
+        :param evidence_items: 证据项列表
+        :return: 一致性检查结果
+        """
         model = model_provider()
         if model is None:
             raise RuntimeError("一致性检查模型未配置")
@@ -534,10 +548,12 @@ def build_structured_consistency_reviewer(
 
 
 def validate_dimension_judgement(
-    branch: BranchEvidenceDraft,
-    judgement: DimensionJudgement,
+        branch: BranchEvidenceDraft,
+        judgement: DimensionJudgement,
 ) -> None:
-    """校验收敛的评分判断：引用范围、状态-分数配对、缺失/冲突必填等。"""
+    """
+    校验收敛的评分判断：引用范围、状态-分数配对、缺失/冲突必填等。
+    """
     unavailable_refs = sorted(
         set(judgement.evidence_refs) - set(branch_evidence_refs(branch))
     )
@@ -559,9 +575,9 @@ def validate_dimension_judgement(
 
 
 def aggregate_candidate_assessments(
-    dimensions: list[EvaluationDimension],
-    assessments: list[DimensionAssessment],
-    consistency_issues: list[ConsistencyIssue] | None = None,
+        dimensions: list[EvaluationDimension],
+        assessments: list[DimensionAssessment],
+        consistency_issues: list[ConsistencyIssue] | None = None,
 ) -> list[CandidateAssessment]:
     """按加权累计计算每位候选人的已确认/理论上限得分与覆盖率，并确定置信度。"""
     issues_by_candidate: dict[str, list[ConsistencyIssue]] = {}
@@ -618,7 +634,7 @@ def aggregate_candidate_assessments(
 
 
 def rank_candidate_assessments(
-    candidates: list[CandidateAssessment],
+        candidates: list[CandidateAssessment],
 ) -> list[CandidateAssessment]:
     """按（已确认得分降序、覆盖率降序、工号升序）对候选人排序。"""
     return sorted(
@@ -632,7 +648,9 @@ def rank_candidate_assessments(
 
 
 def _receive_input(state: TalentEvaluationReportState) -> dict[str, Any]:
-    """接收并校验报告输入：解析维度、分支与证据，并校验任务矩阵完整性。"""
+    """
+    接收并校验报告输入：解析维度、分支与证据，并校验任务矩阵完整性。
+    """
     dimensions = [EvaluationDimension.model_validate(item) for item in state.get("dimensions", [])]
     branches = [BranchEvidenceDraft.model_validate(item) for item in state.get("branch_results", [])]
     evidence_items = evidence_items_from_branches(branches)
@@ -713,15 +731,20 @@ def _receive_input(state: TalentEvaluationReportState) -> dict[str, Any]:
 
 
 def _score_dimensions(
-    dimension_scorer: DimensionScorer,
-    *,
-    max_concurrency: int = 12,
+        dimension_scorer: DimensionScorer,
+        *,
+        max_concurrency: int = 12,
 ):
-    """构造“维度评分”节点：并行对每个取证分支做结构化评分。"""
+    """
+    构造“维度评分”节点：并行对每个取证分支做结构化评分。
+    """
     if max_concurrency < 1:
         raise ValueError("max_concurrency 必须大于 0")
 
     def score_dimensions(state: TalentEvaluationReportState) -> dict[str, Any]:
+        """
+        维度评分节点：并行对每个取证分支做结构化评分。
+        """
         dimensions = {
             dimension_number: EvaluationDimension.model_validate(raw)
             for dimension_number, raw in enumerate(state["dimensions"], start=1)
@@ -744,7 +767,13 @@ def _score_dimensions(
             },
         )
 
+        # 定义评分函数
         def score_branch(branch: BranchEvidenceDraft) -> DimensionAssessment:
+            """
+            对单个取证分支做结构化评分。
+            :param branch: 待评分的取证分支
+            :return: 评分结果
+            """
             # 分支执行失败：直接生成 failed 评估
             if branch.execution_status == "failed":
                 return DimensionAssessment(
@@ -784,6 +813,7 @@ def _score_dimensions(
                 branch,
                 branch_evidence,
             )
+
             validate_dimension_judgement(branch, judgement)
             _log_node(
                 "score_dimensions",
@@ -843,11 +873,13 @@ def _score_dimensions(
 
 
 def validate_consistency_review(
-    review: ConsistencyReview,
-    assessments: list[DimensionAssessment],
-    evidence_items: list[EvidenceItem],
+        review: ConsistencyReview,
+        assessments: list[DimensionAssessment],
+        evidence_items: list[EvidenceItem],
 ) -> None:
-    """校验一致性审查结果：维度和证据必须属于对应候选人的已核验范围。"""
+    """
+    校验一致性审查结果：维度和证据必须属于对应候选人的已核验范围。
+    """
     # 每位候选人拥有（已评估的维度集合、已引用证据集合）
     dimensions_by_candidate = {
         candidate_id: {
@@ -877,23 +909,28 @@ def validate_consistency_review(
         for ref_id in issue.evidence_refs:
             evidence = evidence_by_id.get(ref_id)
             if (
-                ref_id not in allowed_refs
-                or evidence is None
-                or evidence.candidate_id != issue.candidate_id
+                    ref_id not in allowed_refs
+                    or evidence is None
+                    or evidence.candidate_id != issue.candidate_id
             ):
                 raise ValueError(f"一致性问题引用了未核验证据: {ref_id}")
 
 
 def _review_consistency(
-    consistency_reviewer: ConsistencyReviewer,
-    *,
-    max_concurrency: int = 12,
+        consistency_reviewer: ConsistencyReviewer,
+        *,
+        max_concurrency: int = 12,
 ):
-    """构造“一致性审查”节点：按候选人分组并行检查跨维度冲突。"""
+    """
+    构造“一致性审查”节点：按候选人分组并行检查跨维度冲突。
+    """
     if max_concurrency < 1:
         raise ValueError("max_concurrency 必须大于 0")
 
     def review_consistency(state: TalentEvaluationReportState) -> dict[str, Any]:
+        """
+        一致性审查节点：按候选人分组并行检查跨维度冲突。
+        """
         assessments = [
             DimensionAssessment.model_validate(item)
             for item in state["dimension_assessments"]
@@ -924,7 +961,7 @@ def _review_consistency(
             evidence_by_candidate.setdefault(evidence.candidate_id, []).append(evidence)
 
         def review_candidate(
-            item: tuple[str, list[DimensionAssessment]],
+                item: tuple[str, list[DimensionAssessment]],
         ) -> list[ConsistencyIssue]:
             # 对单个候选人的多维度评估做一致性检查并校验
             candidate_id, candidate_assessments = item
@@ -1027,6 +1064,7 @@ def _aggregate_candidates(state: TalentEvaluationReportState) -> dict[str, Any]:
 
 def _compose_report(report_writer: ReportWriter):
     """构造“撰写报告”节点：调用报告撰写器生成报告草稿。"""
+
     def compose_report(state: TalentEvaluationReportState) -> dict[str, Any]:
         candidates = [
             CandidateAssessment.model_validate(item)
@@ -1062,9 +1100,9 @@ def _compose_report(report_writer: ReportWriter):
 
 
 def validate_report_draft(
-    draft: ReportDraft,
-    candidates: list[CandidateAssessment],
-    evidence_items: list[EvidenceItem],
+        draft: ReportDraft,
+        candidates: list[CandidateAssessment],
+        evidence_items: list[EvidenceItem],
 ) -> None:
     """校验报告草稿：候选人顺序一致、证据属于对应候选人且已核验。"""
     expected_candidates = [item.candidate_id for item in candidates]
@@ -1093,9 +1131,9 @@ def validate_report_draft(
 
 
 def render_report_markdown(
-    draft: ReportDraft,
-    candidates: list[CandidateAssessment],
-    evidence_items: list[EvidenceItem],
+        draft: ReportDraft,
+        candidates: list[CandidateAssessment],
+        evidence_items: list[EvidenceItem],
 ) -> str:
     """将报告草稿渲染为 Markdown，并把证据引用转成可点击回引链接。"""
     validate_report_draft(draft, candidates, evidence_items)
@@ -1170,12 +1208,12 @@ def _validate_and_render_report(state: TalentEvaluationReportState) -> dict[str,
 
 
 def build_talent_evaluation_report_graph(
-    *,
-    dimension_scorer: DimensionScorer,
-    consistency_reviewer: ConsistencyReviewer | None = None,
-    report_writer: ReportWriter,
-    max_scoring_concurrency: int = 12,
-    max_consistency_concurrency: int = 12,
+        *,
+        dimension_scorer: DimensionScorer,
+        consistency_reviewer: ConsistencyReviewer | None = None,
+        report_writer: ReportWriter,
+        max_scoring_concurrency: int = 12,
+        max_consistency_concurrency: int = 12,
 ):
     """装配报告生成子图：评分 → 一致性审查 → 聚合 → 撰写 → 渲染。"""
     # 未提供一致性检查器时退化为空审查
@@ -1183,29 +1221,17 @@ def build_talent_evaluation_report_graph(
         lambda assessments, evidence_items: ConsistencyReview()
     )
     builder = StateGraph(TalentEvaluationReportState)
-    builder.add_node("receive_input", _receive_input)
-    builder.add_node(
-        "score_dimensions",
-        _score_dimensions(
-            dimension_scorer,
-            max_concurrency=max_scoring_concurrency,
-        ),
-    )
-    builder.add_node(
-        "review_consistency",
-        _review_consistency(
-            reviewer,
-            max_concurrency=max_consistency_concurrency,
-        ),
-    )
-    builder.add_node("aggregate_candidates", _aggregate_candidates)
-    builder.add_node("compose_report", _compose_report(report_writer))
-    builder.add_node("validate_report", _validate_and_render_report)
-    builder.add_edge(START, "receive_input")
-    builder.add_edge("receive_input", "score_dimensions")
-    builder.add_edge("score_dimensions", "review_consistency")
-    builder.add_edge("review_consistency", "aggregate_candidates")
-    builder.add_edge("aggregate_candidates", "compose_report")
-    builder.add_edge("compose_report", "validate_report")
-    builder.add_edge("validate_report", END)
+    builder.add_node("receive_input", _receive_input) # 接收输入
+    builder.add_node("score_dimensions",_score_dimensions(dimension_scorer, max_concurrency=max_scoring_concurrency, ), ) # 评分维度
+    builder.add_node("review_consistency",_review_consistency(reviewer, max_concurrency=max_consistency_concurrency, ), ) # 一致性审查
+    builder.add_node("aggregate_candidates", _aggregate_candidates) # 聚合候选人
+    builder.add_node("compose_report", _compose_report(report_writer)) # 撰写报告
+    builder.add_node("validate_report", _validate_and_render_report) # 校验渲染报告
+    builder.add_edge(START, "receive_input") # 从开始节点到接收输入节点
+    builder.add_edge("receive_input", "score_dimensions") # 从接收输入节点到评分维度节点
+    builder.add_edge("score_dimensions", "review_consistency") # 从评分维度节点到一致性审查节点
+    builder.add_edge("review_consistency", "aggregate_candidates") # 从一致性审查节点到聚合候选人节点
+    builder.add_edge("aggregate_candidates", "compose_report") # 从聚合候选人节点到撰写报告节点
+    builder.add_edge("compose_report", "validate_report") # 从撰写报告节点到校验渲染报告节点
+    builder.add_edge("validate_report", END) # 从校验渲染报告节点到结束节点
     return builder.compile()

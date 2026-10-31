@@ -37,6 +37,10 @@ class EvaluationDimension(BaseModel):
     retrieval_hints: list[str] = Field(min_length=1, max_length=8)  # 检索提示关键词
     source_requirement_ids: list[str] = Field(min_length=1, max_length=8)  # 来源要求ID
 
+def _branch_query(dimension, requirement):
+    """构建取证分支的查询。"""
+    terms = list(dict.fromkeys([*dimension.retrieval_hints, requirement]))
+    return " ".join(terms)[:500]
 
 class EvaluationDimensionPlan(BaseModel):
     """评估维度计划：一份维度集合。"""
@@ -114,7 +118,9 @@ class BranchEvidenceDraft(BaseModel):
 
 
 class TalentEvaluationDispatchState(TypedDict, total=False):
-    """评估分派执行子图的图状态。"""
+    """
+    评估分派执行子图的图状态。
+    """
     talent_request: dict[str, Any]  # 结构化人才请求
     query_plan: dict[str, Any]  # 查询计划
     dimensions: list[dict[str, Any]]  # 评估维度
@@ -241,7 +247,7 @@ def build_branch_evidence_provider(
                 candidate_ids=candidate_ids,
                 requirements=[
                     {
-                        "requirement_id": "branch_requirement",
+                        "requirement_id": "branch_requirement",  # 分支要求ID
                         "query": query,
                     }
                 ],
@@ -372,6 +378,14 @@ def _missing_requirement(
 ) -> RequirementEvidence:
     """
     构造缺失证据的 RequirementEvidence（未运行抽取）。
+    Args:
+        requirement_id: 证据要求ID
+        query: 检索查询
+        requirement: 证据要求
+        reason: 缺失原因
+
+    Returns:
+        缺失证据的 RequirementEvidence
     """
     return RequirementEvidence(
         requirement_id=requirement_id,
@@ -392,6 +406,15 @@ def build_evidence_branch_worker(service: Any, executor: ToolExecutor) -> Branch
         work_item: AssessmentWorkItem,
         context: DecisionContext,
     ) -> BranchEvidenceDraft:
+        """
+        证据分支工作器：针对评估任务中的某条证据要求执行证据检索与抽取。
+        Args:
+            work_item: 评估任务工作项
+            context: 决策上下文
+
+        Returns:
+            证据分支工作结果
+        """
         logger.info(
             "event=branch_worker_started function=branch_worker task_id=%s "
             "candidate_id=%s dimension_number=%s requirement_count=%s",
@@ -614,7 +637,9 @@ def _receive_input(
     state: TalentEvaluationDispatchState,
     runtime: Runtime[DecisionContext],
 ) -> dict[str, Any]:
-    """接收并校验评估输入：校验上下文、人才请求与查询计划。"""
+    """
+    接收并校验评估输入：校验上下文、人才请求与查询计划。
+    """
     logger.info(
         "event=graph_node_started function=_receive_input node=receive_input "
         "tenant_id=%s permission_scope_count=%s has_talent_request=%s "
@@ -646,7 +671,13 @@ def _receive_input(
 
 
 def _generate_dimensions(dimension_generator: DimensionGenerator):
-    """构造“生成维度”节点：调用维度生成器生成评估维度计划。"""
+    """
+    构造“生成维度”节点：调用维度生成器生成评估维度计划。
+    Args:
+        dimension_generator: 维度生成器
+    Returns:
+        生成的评估维度计划
+    """
     def generate_dimensions(state: TalentEvaluationDispatchState) -> dict[str, Any]:
         plan = dimension_generator(
             state["talent_request"],
@@ -666,7 +697,9 @@ def _generate_dimensions(dimension_generator: DimensionGenerator):
 
 
 def _validate_dimensions(state: TalentEvaluationDispatchState) -> dict[str, Any]:
-    """校验维度计划（权重合计是否合法）。"""
+    """
+    校验维度计划（权重合计是否合法）。
+    """
     plan = EvaluationDimensionPlan(dimensions=state["dimensions"])
     issues = validate_dimension_plan(plan)
     logger.info(
@@ -683,16 +716,20 @@ def _validate_dimensions(state: TalentEvaluationDispatchState) -> dict[str, Any]
 def _route_dimension_validation(
     state: TalentEvaluationDispatchState,
 ) -> Literal["retrieve_candidates", "prepare_work_items", "dimension_invalid"]:
-    """维度校验后的路由：有问题→维度非法；已预选→进入工作项；否则检索候选人。"""
-    if state.get("validation_issues"):
-        return "dimension_invalid"
-    if state.get("candidates_preselected"):
-        return "prepare_work_items"
-    return "retrieve_candidates"
+    """
+    维度校验后的路由：有问题→维度非法；已预选→进入工作项；否则检索候选人。
+    """
+    if state.get("validation_issues"):  # 如果校验问题
+        return "dimension_invalid"  # 维度非法
+    if state.get("candidates_preselected"):  # 如果已预选候选人
+        return "prepare_work_items"  # 进入工作项
+    return "retrieve_candidates"  # 检索候选人
 
 
 def _retrieve_candidates(candidate_provider: CandidateProvider):
-    """构造“检索候选人”节点：调用候选人提供者筛选候选人。"""
+    """
+    构造“检索候选人”节点：调用候选人提供者筛选候选人。
+    """
     def retrieve_candidates(
         state: TalentEvaluationDispatchState,
         runtime: Runtime[DecisionContext],
@@ -712,7 +749,9 @@ def _retrieve_candidates(candidate_provider: CandidateProvider):
 
 
 def _prepare_work_items(max_work_items: int):
-    """构造“准备工作项”节点：生成候选人×维度的取证工作项并做容量检查。"""
+    """
+    构造“准备工作项”节点：生成候选人×维度的取证工作项并做容量检查。
+    """
     def prepare_work_items(state: TalentEvaluationDispatchState) -> dict[str, Any]:
         dimensions = [
             EvaluationDimension.model_validate(item) for item in state["dimensions"]
@@ -778,16 +817,20 @@ def build_work_item_sends(
 
 
 def _dispatch_work_items(state: TalentEvaluationDispatchState):
-    """工作项分派路由：超限→结束；无工作项→无候选人；否则并行 Send。"""
+    """
+    工作项分派路由：超限→结束；无工作项→无候选人；否则并行 Send。
+    """
     if state.get("status") == "capacity_exceeded":
-        return "capacity_exceeded"
-    if not state.get("work_items"):
-        return "no_candidates"
-    return build_work_item_sends(state["work_items"])
+        return "capacity_exceeded"  # 容量超限
+    if not state.get("work_items"):  # 如果无工作项
+        return "no_candidates"  # 无候选人
+    return build_work_item_sends(state["work_items"])  # 并行分派工作项
 
 
 def _run_assessment_branch(branch_worker: BranchWorker):
-    """构造“取证分支”节点：为单个工作项执行证据检索，并以失败兜底。"""
+    """
+    构造“取证分支”节点：为单个工作项执行证据检索，并以失败兜底。
+    """
     def run_assessment_branch(
         state: dict[str, Any],
         runtime: Runtime[DecisionContext],
@@ -854,7 +897,9 @@ def _run_assessment_branch(branch_worker: BranchWorker):
 
 
 def _finalize(state: TalentEvaluationDispatchState) -> dict[str, Any]:
-    """汇总分支结果：依据是否存在失败分支设定最终状态。"""
+    """
+    汇总分支结果：依据是否存在失败分支设定最终状态。
+    """
     has_failures = any(
         item["execution_status"] == "failed"
         for item in state.get("branch_results", [])
@@ -905,8 +950,7 @@ def build_talent_evaluation_dispatch_graph(
     """
     组装并编译“评估分派执行”子图。
 
-    流程：接收输入 → 生成/校验维度 → （检索候选人）→ 准备工作项 →
-    并行分派取证分支 → 汇总（finalize）。
+    流程：接收输入 → 生成/校验维度 → （检索候选人）→ 准备工作项 → 并行分派取证分支 → 汇总（finalize）。
 
 
     """
@@ -916,32 +960,31 @@ def build_talent_evaluation_dispatch_graph(
         TalentEvaluationDispatchState,
         context_schema=DecisionContext,
     )
-    builder.add_node("receive_input", _receive_input)
-    builder.add_node("generate_dimensions", _generate_dimensions(dimension_generator))
-    builder.add_node("validate_dimensions", _validate_dimensions)
-    builder.add_node("retrieve_candidates", _retrieve_candidates(candidate_provider))
-    builder.add_node("prepare_work_items", _prepare_work_items(max_work_items))
-    builder.add_node("run_assessment_branch", _run_assessment_branch(branch_worker))
-    builder.add_node("finalize", _finalize)
-    builder.add_node("dimension_invalid", _dimension_invalid)
-    builder.add_node("no_candidates", _no_candidates)
-    builder.add_node("capacity_exceeded", _capacity_exceeded)
-    builder.add_edge(START, "receive_input")
-    builder.add_edge("receive_input", "generate_dimensions")
-    builder.add_edge("generate_dimensions", "validate_dimensions")
+    builder.add_node("receive_input", _receive_input)  # 接收输入
+    builder.add_node("generate_dimensions", _generate_dimensions(dimension_generator))  # 生成维度
+    builder.add_node("validate_dimensions", _validate_dimensions)  # 校验维度
+    builder.add_node("retrieve_candidates", _retrieve_candidates(candidate_provider))  # 检索候选人
+    builder.add_node("prepare_work_items", _prepare_work_items(max_work_items))  # 准备工作项
+    builder.add_node("run_assessment_branch", _run_assessment_branch(branch_worker))  # 并行分派取证分支
+    builder.add_node("finalize", _finalize)  # 汇总（finalize）
+    builder.add_node("dimension_invalid", _dimension_invalid)  # 维度非法
+    builder.add_node("no_candidates", _no_candidates)  # 无候选人
+    builder.add_node("capacity_exceeded", _capacity_exceeded)  # 容量超限
+
+
+    builder.add_edge(START, "receive_input")  # 从开始节点到接收输入节点
+    builder.add_edge("receive_input", "generate_dimensions")  # 从接收输入节点到生成维度节点
+    builder.add_edge("generate_dimensions", "validate_dimensions")  # 从生成维度节点到校验维度节点
+    builder.add_conditional_edges("validate_dimensions",_route_dimension_validation,)  # 从校验维度节点到路由校验节点
+    builder.add_edge("retrieve_candidates", "prepare_work_items")  # 从检索候选人节点到准备工作项节点
     builder.add_conditional_edges(
-        "validate_dimensions",
-        _route_dimension_validation,
-    )
-    builder.add_edge("retrieve_candidates", "prepare_work_items")
-    builder.add_conditional_edges(
-        "prepare_work_items",
+        "prepare_work_items",  # 从准备工作项节点到分派工作项节点
         _dispatch_work_items,
         ["run_assessment_branch", "no_candidates", "capacity_exceeded"],
-    )
-    builder.add_edge("run_assessment_branch", "finalize")
-    builder.add_edge("finalize", END)
-    builder.add_edge("dimension_invalid", END)
-    builder.add_edge("no_candidates", END)
-    builder.add_edge("capacity_exceeded", END)
+    )  # 从分派工作项节点到汇总节点
+    builder.add_edge("run_assessment_branch", "finalize")  # 从分派取证分支节点到汇总节点
+    builder.add_edge("finalize", END)  # 从汇总节点到结束节点
+    builder.add_edge("dimension_invalid", END)  # 从维度非法节点到结束节点
+    builder.add_edge("no_candidates", END)  # 从无候选人节点到结束节点
+    builder.add_edge("capacity_exceeded", END)  # 从容量超限节点到结束节点
     return builder.compile()
