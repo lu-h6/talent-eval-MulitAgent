@@ -1,3 +1,5 @@
+"""人才工具 MCP 服务端：把人才检索/画像能力暴露为 MCP Tools。"""
+
 from __future__ import annotations
 
 from collections.abc import Callable

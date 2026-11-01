@@ -1,3 +1,5 @@
+"""演示岗位数据：按 job_code 幂等写入岗位 JD。"""
+
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence

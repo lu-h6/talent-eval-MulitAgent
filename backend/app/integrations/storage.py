@@ -1,3 +1,5 @@
+"""对象存储的桶名与路径约定。"""
+
 import re
 from pathlib import PurePath
 

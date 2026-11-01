@@ -1,3 +1,5 @@
+"""评测用例采集：在图模块的调用边界抓取可回放的输入输出快照。"""
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -13,6 +15,7 @@ from app.db.models import EvaluationCaseRecord
 
 
 class EvaluationModule(StrEnum):
+    """可被采集与回放的模块枚举。"""
     REQUEST_UNDERSTANDING = "request_understanding"
     JOB_MATCHING = "job_matching"
     DIMENSION_GENERATION = "dimension_generation"
@@ -20,7 +23,7 @@ class EvaluationModule(StrEnum):
 
 
 class EvaluationCaseDraft(BaseModel):
-    """A replayable snapshot captured at a real module invocation boundary."""
+    """在真实模块调用边界捕获的可回放快照。"""
 
     schema_version: Literal["1.0"] = "1.0"
     source_run_id: str
@@ -37,12 +40,14 @@ class EvaluationCaseDraft(BaseModel):
 
 
 class SqlEvaluationCaseStore:
-    """Persist raw module calls without adding labels or golden answers."""
+    """只保存原始模块调用，不写标注或 Golden。"""
 
     def __init__(self, session_factory: sessionmaker) -> None:
+        """保存会话工厂，用于后续落库。"""
         self._session_factory = session_factory
 
     def record(self, draft: EvaluationCaseDraft) -> EvaluationCaseRecord:
+        """写入一条用例；Postgres 下用事务锁避免并发唯一键冲突。"""
         with self._session_factory() as session:
             if session.bind.dialect.name == "postgresql":
                 lock_key = int.from_bytes(sha256(
@@ -80,7 +85,7 @@ def recent_request_messages(
     *,
     previous_turn_limit: int = 3,
 ) -> list[AnyMessage]:
-    """Return the current turn and at most the configured previous turns."""
+    """返回当前轮与至多指定数量的历史轮消息。"""
 
     if previous_turn_limit < 0:
         raise ValueError("previous_turn_limit 不能小于 0")
@@ -103,6 +108,7 @@ def build_request_understanding_case(
     error_code: str | None = None,
     duration_ms: int | None = None,
 ) -> EvaluationCaseDraft:
+    """构造任务理解模块的评测用例草案。"""
     recent_messages = recent_request_messages(messages)
     return EvaluationCaseDraft(
         source_run_id=source_run_id,
@@ -143,6 +149,7 @@ logger = logging.getLogger(__name__)
 
 @contextmanager
 def extraction_scope(context, **identity):
+    """构造一次抽取的范围信息（运行、会话、轮次）。"""
     token = _capture_scope.set((context, identity))
     try:
         yield
@@ -151,10 +158,12 @@ def extraction_scope(context, **identity):
 
 
 def current_extraction_scope():
+    """读取当前上下文中的抽取范围。"""
     return _capture_scope.get()
 
 
 def safe_record(recorder, draft):
+    """安全落库：采集失败不影响主流程。"""
     try:
         return recorder(draft)
     except Exception as exc:
@@ -165,6 +174,7 @@ def safe_record(recorder, draft):
 
 def capture_call(call, *, context, module_key, input_payload, recorder=None,
                  version_snapshot=None, replay_extra=None):
+    """包裹一次模块调用，成功/失败都记录用例并返回结果。"""
     if context is None or not context.run_id:
         return call()
     if recorder is None:

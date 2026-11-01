@@ -1,3 +1,5 @@
+"""证据索引任务：切块向量化并写入 Milvus，维护任务状态。"""
+
 from __future__ import annotations
 
 import hashlib

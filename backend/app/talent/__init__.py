@@ -1,1 +1,1 @@
-"""Talent tools, request graphs, evaluation, and decision workflows."""
+"""人才工具、请求图、评估与决策流程。"""

@@ -1,3 +1,5 @@
+"""MinerU 解析服务客户端：提交文档并取回解析产物。"""
+
 import json
 import logging
 from pathlib import Path

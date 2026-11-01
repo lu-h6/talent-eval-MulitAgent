@@ -1,3 +1,5 @@
+"""文档处理流水线：上传后依次编排解析、切块与证据索引。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

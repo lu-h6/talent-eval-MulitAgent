@@ -1,3 +1,5 @@
+"""数据库引擎与会话工厂（SQLAlchemy）。"""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

@@ -1,3 +1,5 @@
+"""引用处理：把短编号映射回 Chunk 并回表校验来源。"""
+
 # 依据 PostgreSQL 中当前的权限解析引用，绝不信任向量索引里的元信息。
 from uuid import UUID
 from fastapi import HTTPException
@@ -27,6 +29,7 @@ def resolve_citation(db, chunk_id: UUID, *, tenant_id: str, permission_scopes: l
     """
 
     def unavailable():
+        """把无法解析的引用标记为不可用。"""
         raise HTTPException(404, '引用不可用或无访问权限')
 
     # 逐级加载分块 -> 版本 -> 文档，任一级缺失即视为不可访问

@@ -1,1 +1,1 @@
-"""Document parsing, chunking, and lifecycle services."""
+"""文档解析、切块与生命周期服务。"""

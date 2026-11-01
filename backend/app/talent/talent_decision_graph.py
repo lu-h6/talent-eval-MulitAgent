@@ -1,3 +1,8 @@
+"""人才决策子图：请求理解 → 候选人检索 → 评估 → 报告的最小闭环。
+
+本文件同时包含 DecisionContext（租户与权限上下文）与两个 reducer 演示图，
+用于说明状态合并与并行分支的行为。"""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -113,6 +118,7 @@ def _candidate_node(candidate_provider: CandidateProvider):
         state: TalentDecisionState,
         runtime: Runtime[DecisionContext],
     ) -> dict:
+        """调用候选人 Provider 并写回候选集。"""
         candidate_ids = candidate_provider(state["request"], runtime.context)
         return {"candidate_ids": candidate_ids, "status": "candidates_ready"}
 
@@ -204,6 +210,7 @@ def build_talent_decision_graph(candidate_provider: CandidateProvider):
 
 
 class MissingReducerState(TypedDict):
+    """反例状态：缺少 reducer 时并行分支会互相覆盖。"""
     items: list[str]
 
 
@@ -220,6 +227,7 @@ def build_missing_reducer_demo():
 
 
 class ReducerState(TypedDict):
+    """正例状态：以 list.__add__ 作为 reducer 合并并行分支。"""
     items: Annotated[list[str], list.__add__]
 
 

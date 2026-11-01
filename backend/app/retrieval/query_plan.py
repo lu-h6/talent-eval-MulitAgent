@@ -1,3 +1,5 @@
+"""查询计划 DSL：过滤条件、语义要求、偏好与可执行性校验。"""
+
 from __future__ import annotations
 
 from datetime import date
@@ -98,6 +100,7 @@ class FilterFieldSpec:
 def _column_spec(column: Any, description: str, operators: set[str]) -> FilterFieldSpec:
     """为字典列生成通用的 FilterFieldSpec（按操作符构造列比较表达式）。"""
     def build(item: FilterCondition, _: date):
+        """拼装 SQL 片段与对应参数。"""
         value = item.value
         return {
             "eq": lambda: column == value,
@@ -189,7 +192,7 @@ def execute_composite_search(
     candidate_ids: list[str],
     search_requirement: Any,
 ) -> dict[str, Any]:
-    """Run semantic requirements only inside the SQL-selected candidate set."""
+    """执行复合检索（向量召回 + 关键词召回）。"""
     if not plan.executable:
         raise ValueError("查询计划仍有待澄清条件")
     if not candidate_ids:

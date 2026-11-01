@@ -1,3 +1,7 @@
+"""把 LangGraph 节点更新投影为前端可消费的业务事件。
+
+只透出白名单字段，避免内部状态泄漏；中断载荷会转换成前端可渲染的选项结构。"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -42,7 +46,7 @@ STEP_BY_COMPLETION_NODE = {
 
 
 def interrupt_payload(update: Any) -> dict[str, Any] | None:
-    """Extract the public value from LangGraph's tuple[Interrupt, ...]."""
+    """从中断更新中提取中断载荷。"""
 
     if isinstance(update, dict):
         return update
@@ -53,16 +57,19 @@ def interrupt_payload(update: Any) -> dict[str, Any] | None:
 
 
 def step_for_start(node: str) -> tuple[str, str, str] | None:
+    """节点名到步骤元信息（step_id / 标题 / 类型）的映射。"""
     return STEP_BY_START_NODE.get(node)
 
 
 def _selected_fields(value: Any, fields: tuple[str, ...]) -> dict[str, Any]:
+    """按白名单挑选字段，过滤掉内部细节。"""
     if not isinstance(value, dict):
         return {}
     return {field: value[field] for field in fields if field in value}
 
 
 def _candidate_summaries(value: Any) -> list[dict[str, Any]]:
+    """把候选人与分维度结果压缩成前端展示摘要。"""
     if not isinstance(value, list):
         return []
     fields = (
@@ -76,7 +83,7 @@ def _candidate_summaries(value: Any) -> list[dict[str, Any]]:
 
 
 def _project_step_output(node: str, update: dict[str, Any]) -> dict[str, Any]:
-    """Expose useful business output without leaking the full graph state."""
+    """按节点投影步骤输出。"""
 
     output: dict[str, Any] = {"status": str(update.get("status", "completed"))}
     if node == "build_plan":
@@ -124,6 +131,7 @@ def _project_step_output(node: str, update: dict[str, Any]) -> dict[str, Any]:
 
 
 def _job_selection(payload: dict[str, Any]) -> dict[str, Any]:
+    """把岗位选择中断转换为前端可渲染的选项。"""
     options = [
         {"value": str(item["job_code"]), "label": str(item["name"])}
         for item in payload.get("options", [])
@@ -138,6 +146,7 @@ def _job_selection(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _requirement_revision(payload: dict[str, Any]) -> dict[str, Any]:
+    """把条件修订中断转换为前端可渲染的载荷。"""
     return {
         "interaction_type": "requirement_revision",
         "interaction_id": str(payload.get("interaction_id", "")),
@@ -157,7 +166,7 @@ def project_graph_update(
     node: str,
     update: Any,
 ) -> list[dict[str, Any]]:
-    """Project graph updates into a stable protocol without leaking graph state."""
+    """把一次节点更新投影为业务事件。"""
 
     del namespace
     if node == "__interrupt__":

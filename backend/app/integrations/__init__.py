@@ -1,1 +1,1 @@
-"""Model, storage, parser, and MCP integrations."""
+"""模型、对象存储、解析与 MCP 集成。"""

@@ -1,3 +1,5 @@
+"""后台 worker：从 Redis 队列消费解析/切块/索引任务。"""
+
 import logging
 from uuid import UUID
 

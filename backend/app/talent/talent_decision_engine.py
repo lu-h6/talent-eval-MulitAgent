@@ -1,3 +1,5 @@
+"""决策引擎：把请求处理、评估分发与报告三个子图串成主流程。"""
+
 from __future__ import annotations
 
 from typing import Annotated, Any, Literal

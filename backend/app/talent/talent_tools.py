@@ -1,3 +1,5 @@
+"""人才数据工具：岗位检索、候选人筛选、画像读取与证据检索，并统一记录调用审计。"""
+
 from __future__ import annotations
 
 import logging
@@ -46,9 +48,11 @@ class InMemoryAuditSink:
     """内存版审计落盘（用于测试或默认场景）。"""
 
     def __init__(self) -> None:
+        """初始化内存审计缓冲。"""
         self.records: list[dict[str, Any]] = []
 
     def write(self, record: dict[str, Any]) -> None:
+        """记录一条审计到内存。"""
         self.records.append(record)
 
 
@@ -56,9 +60,11 @@ class SqlAuditSink:
     """持久化到数据库的审计落盘。"""
 
     def __init__(self, session_factory: Callable[[], Session]) -> None:
+        """保存会话工厂。"""
         self.session_factory = session_factory
 
     def write(self, record: dict[str, Any]) -> None:
+        """把审计记录写入数据库。"""
         with self.session_factory() as db:
             db.add(ToolCallAudit(**record))
             db.commit()
@@ -71,6 +77,7 @@ class CircuitBreaker:
     """
 
     def __init__(self, *, failure_threshold: int = 3, recovery_seconds: float = 30) -> None:
+        """初始化失败计数与熔断阈值。"""
         self.failure_threshold = failure_threshold  # 触发熔断的连续失败次数
         self.recovery_seconds = recovery_seconds  # 熔断恢复等待时长
         self._failures: dict[str, int] = {}  # 各工具的连续失败计数
@@ -116,6 +123,7 @@ class ToolExecutor:
             circuit_breaker: CircuitBreaker | None = None,
             audit_sink: Any | None = None,
     ) -> None:
+        """保存工具策略与默认执行参数。"""
         self.policy = policy or ToolPolicy()  # 默认执行策略
         self.tool_policies = tool_policies or {}  # 按工具名覆盖的策略
         self.circuit_breaker = circuit_breaker or CircuitBreaker()  # 熔断器
@@ -290,6 +298,7 @@ class TalentToolService:
             session_factory: Callable[[], Session],  #
             evidence_provider: Callable[..., dict[str, Any]] | None = None,  #
     ) -> None:
+        """装配会话工厂、证据提供者与审计出口。"""
         self.session_factory = session_factory
         self.evidence_provider = evidence_provider  # 证据检索提供者（可缺省）
 

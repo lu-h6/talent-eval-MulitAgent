@@ -1,3 +1,5 @@
+"""Milvus 集合管理：Schema、索引、Upsert、过滤与向量检索。"""
+
 from __future__ import annotations
 
 import json
@@ -9,21 +11,38 @@ from pymilvus import AnnSearchRequest, DataType, Function, FunctionType, MilvusC
 
 class MilvusClientProtocol(Protocol):
     """Milvus 客户端的协议接口（便于测试时注入 Mock）。"""
-    def has_collection(self, collection_name: str) -> bool: ...
 
-    def create_schema(self, **kwargs: Any) -> Any: ...
+    def has_collection(self, collection_name: str) -> bool:
+        """判断集合是否存在。"""
+        ...
 
-    def prepare_index_params(self) -> Any: ...
+    def create_schema(self, **kwargs: Any) -> Any:
+        """创建集合 Schema。"""
+        ...
 
-    def create_collection(self, **kwargs: Any) -> Any: ...
+    def prepare_index_params(self) -> Any:
+        """准备索引参数。"""
+        ...
 
-    def upsert(self, **kwargs: Any) -> Any: ...
+    def create_collection(self, **kwargs: Any) -> Any:
+        """创建集合。"""
+        ...
 
-    def search(self, **kwargs: Any) -> Any: ...
+    def upsert(self, **kwargs: Any) -> Any:
+        """写入或更新实体。"""
+        ...
 
-    def hybrid_search(self, **kwargs: Any) -> Any: ...
+    def search(self, **kwargs: Any) -> Any:
+        """执行向量检索。"""
+        ...
 
-    def delete(self, **kwargs: Any) -> Any: ...
+    def hybrid_search(self, **kwargs: Any) -> Any:
+        """执行混合检索。"""
+        ...
+
+    def delete(self, **kwargs: Any) -> Any:
+        """按条件删除实体。"""
+        ...
 
 
 @dataclass(frozen=True)
@@ -135,6 +154,7 @@ class MilvusEvidenceStore:
         collection_name: str,
         dimension: int,
     ) -> None:
+        """初始化集合名、向量维度与 Milvus 客户端。"""
         self.client = client  # Milvus 客户端
         self.collection_name = collection_name  # 集合名
         self.dimension = dimension  # 稠密向量维度

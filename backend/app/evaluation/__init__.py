@@ -1,1 +1,1 @@
-"""Human-eval case store, judge and HTTP API."""
+"""评测用例存储、Judge 与 HTTP 接口。"""

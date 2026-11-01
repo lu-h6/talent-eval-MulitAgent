@@ -1,3 +1,5 @@
+"""证据包构建：把检索命中整理为可引用的证据片段与事实抽取结果。"""
+
 # 第九课：证据组织。模型判断仍是可复核的假说，必须回引材料原文。
 from __future__ import annotations
 
@@ -53,6 +55,7 @@ class EvidenceSourceValidationError(ValueError):
             quote_length: int,
             source_length: int | None = None,
     ) -> None:
+        """记录来源校验失败的原因。"""
         super().__init__(code)
         self.code = code
         self.chunk_id = chunk_id
@@ -82,6 +85,7 @@ def model_extractor(model):
 
     def extract(requirement, sources):
         # 用短别名（source_1…）替代真实 chunk_id 传给 LLM，避免污染
+        """调用模型抽取事实，失败时按配置重试。"""
         source_aliases = {
             f'source_{index}': row['chunk_id']
             for index, row in enumerate(sources, start=1)

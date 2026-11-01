@@ -1,3 +1,8 @@
+"""运行历史与会话读模型的持久化。
+
+Run、Run 步骤与会话列表都写在这里；读模型供前端历史列表与详情使用，
+不参与 LangGraph 状态恢复（恢复仍走 Postgres checkpointer）。"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -10,10 +15,12 @@ from app.db.models import TalentConversationRecord, TalentRunRecord, TalentRunSt
 
 
 def _timestamp(value: str) -> datetime:
+    """把 ISO 字符串解析为带时区的 datetime。"""
     return datetime.fromisoformat(value)
 
 
 def _duration_ms(started_at: datetime | None, completed_at: datetime) -> int | None:
+    """计算从开始到结束的毫秒耗时。"""
     if started_at is None:
         return None
     if started_at.tzinfo is None and completed_at.tzinfo is not None:
@@ -22,16 +29,19 @@ def _duration_ms(started_at: datetime | None, completed_at: datetime) -> int | N
 
 
 def _iso(value: datetime | None) -> str | None:
+    """把 datetime 序列化为 ISO 字符串，空值原样返回 None。"""
     return value.isoformat() if value is not None else None
 
 
 class SqlTalentRunHistoryStore:
-    """Persist the latest product-facing snapshot for each Run and step."""
+    """运行历史与会话读模型的 SQL 实现。"""
 
     def __init__(self, session_factory: sessionmaker) -> None:
+        """保存会话工厂。"""
         self._session_factory = session_factory
 
     def record(self, event: Any) -> None:
+        """落库一次运行及其步骤。"""
         occurred_at = _timestamp(event.timestamp)
         with self._session_factory() as session:
             run = session.get(TalentRunRecord, event.run_id)
@@ -118,6 +128,7 @@ class SqlTalentRunHistoryStore:
         event: Any,
         occurred_at: datetime,
     ) -> None:
+        """写入或更新单个步骤。"""
         step_id = str(event.data.get("step_id", ""))
         if not step_id:
             return
@@ -173,6 +184,7 @@ class SqlTalentRunHistoryStore:
         status: str,
         occurred_at: datetime,
     ) -> None:
+        """更新处于活动状态的步骤。"""
         active_steps = session.scalars(
             select(TalentRunStepRecord).where(
                 TalentRunStepRecord.run_id == run_id,
@@ -196,6 +208,7 @@ class SqlTalentRunHistoryStore:
             step.status = status
 
     def list_runs(self, *, limit: int = 20) -> list[dict[str, Any]]:
+        """按开始时间倒序列出运行摘要。"""
         with self._session_factory() as session:
             runs = session.scalars(
                 select(TalentRunRecord)
@@ -210,6 +223,7 @@ class SqlTalentRunHistoryStore:
         status: str | None = None,
         limit: int = 20,
     ) -> list[dict[str, Any]]:
+        """列出会话及其最新运行。"""
         with self._session_factory() as session:
             statement = select(TalentConversationRecord)
             if status:
@@ -229,6 +243,7 @@ class SqlTalentRunHistoryStore:
             ]
 
     def next_turn_no(self, conversation_id: str) -> int:
+        """计算会话下一轮的轮次号。"""
         with self._session_factory() as session:
             latest = session.scalar(
                 select(func.max(TalentRunRecord.turn_no)).where(
@@ -238,6 +253,7 @@ class SqlTalentRunHistoryStore:
             return int(latest or 0) + 1
 
     def get_run(self, run_id: str) -> dict[str, Any] | None:
+        """读取运行详情。"""
         with self._session_factory() as session:
             run = session.get(TalentRunRecord, run_id)
             if run is None:
@@ -278,6 +294,7 @@ class SqlTalentRunHistoryStore:
 
     @staticmethod
     def _run_summary(run: TalentRunRecord) -> dict[str, Any]:
+        """把运行行转换为摘要结构。"""
         duration_ms = _duration_ms(run.started_at, run.completed_at) if run.completed_at else None
         return {
             "run_id": run.run_id,
@@ -295,6 +312,7 @@ class SqlTalentRunHistoryStore:
         run: TalentRunRecord,
         steps: list[TalentRunStepRecord],
     ) -> dict[str, Any]:
+        """取会话当前轮次。"""
         return {
             "run_id": run.run_id,
             "turn_no": run.turn_no,
@@ -309,6 +327,7 @@ class SqlTalentRunHistoryStore:
 
     @staticmethod
     def _step_detail(step: TalentRunStepRecord) -> dict[str, Any]:
+        """把步骤行转换为详情结构。"""
         return {
             "step_id": step.step_id,
             "position": step.position,

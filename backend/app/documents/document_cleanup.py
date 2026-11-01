@@ -1,3 +1,5 @@
+"""文档删除时的级联清理：对象存储文件、解析产物与向量索引。"""
+
 from __future__ import annotations
 
 from uuid import UUID

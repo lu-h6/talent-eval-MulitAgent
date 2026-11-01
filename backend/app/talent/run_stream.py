@@ -1,3 +1,5 @@
+"""运行管理器：驱动决策主图、维护 Run 状态与事件缓冲，支持 SSE、取消与 HITL 恢复。"""
+
 from __future__ import annotations
 
 import asyncio
@@ -21,6 +23,7 @@ from app.talent.event_projection import (
 
 
 class RunStatus(StrEnum):
+    """运行状态枚举：运行中、等待人工输入、完成、失败、已取消。"""
     RUNNING = "running"
     WAITING_INPUT = "waiting_input"
     COMPLETED = "completed"
@@ -39,6 +42,7 @@ FAILED_GRAPH_STATUSES = {"capacity_exceeded", "dimension_invalid", "failed"}
 
 @dataclass(frozen=True)
 class RunEvent:
+    """运行事件：事件 ID、序号、类型、所属运行、时间戳与业务载荷。"""
     event_id: str
     sequence: int
     type: str
@@ -50,6 +54,7 @@ class RunEvent:
 
 @dataclass
 class TalentRun:
+    """一次运行的运行时快照：消息、状态、事件缓冲、步骤进度与报告。"""
     run_id: str
     conversation_id: str
     turn_no: int
@@ -71,7 +76,7 @@ class TalentRun:
 
 
 class TalentRunManager:
-    """Stream the real decision graph and retain events for the active SSE stream."""
+    """驱动决策主图的运行管理器（含事件缓冲与 HITL 恢复）。"""
 
     def __init__(
         self,
@@ -81,6 +86,7 @@ class TalentRunManager:
         max_concurrency: int = 6,
         record_store: Any | None = None,
     ) -> None:
+        """保存图、决策上下文与运行历史存储。"""
         self._graph = graph
         self._checkpoint_runtime: PostgresCheckpointRuntime | None = None
         self._context = context or DecisionContext(
@@ -94,6 +100,7 @@ class TalentRunManager:
         self._conditions: dict[str, asyncio.Condition] = {}
 
     async def startup(self) -> None:
+        """拉起 checkpointer 并编译运行时决策图。"""
         if self._graph is not None:
             return
         from app.talent.talent_decision_runtime import build_runtime_decision_graph
@@ -105,6 +112,7 @@ class TalentRunManager:
         self._graph = build_runtime_decision_graph(checkpointer=saver)
 
     async def shutdown(self) -> None:
+        """关闭 checkpointer 连接池。"""
         if self._checkpoint_runtime is not None:
             await self._checkpoint_runtime.close()
             self._checkpoint_runtime = None
@@ -122,6 +130,7 @@ class TalentRunManager:
         *,
         conversation_id: str | None = None,
     ) -> TalentRun:
+        """创建运行、追加起始事件并异步驱动主图。"""
         await self.startup()
         conversation_key = conversation_id or str(uuid4())
         run_ids = self._conversation_runs.setdefault(conversation_key, [])
@@ -157,19 +166,23 @@ class TalentRunManager:
         return run
 
     def get_run(self, run_id: str) -> TalentRun:
+        """按 ID 取运行快照。"""
         try:
             return self._runs[run_id]
         except KeyError as exc:
             raise KeyError("运行不存在") from exc
 
     def events_since(self, run_id: str, cursor: int) -> list[RunEvent]:
+        """返回游标之后的事件。"""
         run = self.get_run(run_id)
         return [event for event in run.events if event.sequence > cursor]
 
     def is_stream_finished(self, run_id: str) -> bool:
+        """判断运行是否已进入终态。"""
         return self.get_run(run_id).status in TERMINAL_STATUSES
 
     async def resume_run(self, run_id: str, value: str) -> TalentRun:
+        """提交人工决策并从暂停点继续执行。"""
         run = self.get_run(run_id)
         if run.status != RunStatus.WAITING_INPUT or run.pending_interrupt is None:
             raise ValueError("当前运行不在等待人工输入")
@@ -182,6 +195,7 @@ class TalentRunManager:
         return run
 
     async def cancel_run(self, run_id: str) -> TalentRun:
+        """取消运行并广播取消事件。"""
         run = self.get_run(run_id)
         if run.status in TERMINAL_STATUSES:
             return run
@@ -199,6 +213,7 @@ class TalentRunManager:
         *,
         timeout: float = 15,
     ) -> None:
+        """等待新事件或超时返回。"""
         run = self.get_run(run_id)
         if len(run.events) > cursor or self.is_stream_finished(run_id):
             return
@@ -210,6 +225,7 @@ class TalentRunManager:
                 return
 
     def _append(self, run: TalentRun, event_type: str, data: dict[str, Any]) -> RunEvent:
+        """追加事件并唤醒等待中的 SSE 协程。"""
         sequence = len(run.events) + 1
         event = RunEvent(
             event_id=f"{run.run_id}:{sequence}",
@@ -225,11 +241,13 @@ class TalentRunManager:
         return event
 
     def list_history(self, *, limit: int = 20) -> list[dict[str, Any]]:
+        """列出运行历史。"""
         if self._record_store is None:
             return []
         return self._record_store.list_runs(limit=limit)
 
     def get_history(self, run_id: str) -> dict[str, Any] | None:
+        """读取运行历史详情。"""
         if self._record_store is None:
             return None
         return self._record_store.get_run(run_id)
@@ -240,28 +258,33 @@ class TalentRunManager:
         status: str | None = None,
         limit: int = 20,
     ) -> list[dict[str, Any]]:
+        """列出会话。"""
         if self._record_store is None:
             return []
         return self._record_store.list_conversations(status=status, limit=limit)
 
     async def _emit(self, run: TalentRun, event_type: str, data: dict[str, Any]) -> None:
+        """构造并追加一条事件。"""
         if run.status == RunStatus.CANCELLED and event_type != "run.cancelled":
             return
         self._append(run, event_type, data)
         await self._notify(run.run_id)
 
     async def _notify(self, run_id: str) -> None:
+        """唤醒等待该运行的协程。"""
         condition = self._conditions[run_id]
         async with condition:
             condition.notify_all() # 通知所有等待 SSE 的协程，表示有新事件可用
 
     def _config(self, run: TalentRun) -> dict[str, Any]:
+        """生成图调用所需的配置（线程 ID 等）。"""
         return {
             "configurable": {"thread_id": run.conversation_id},
             "max_concurrency": self._max_concurrency,
         }
 
     async def _execute(self, run: TalentRun, graph_input: Any) -> None:
+        """执行主图并投影事件，异常时落为失败终态。"""
         try:
             graph = self._graph
             if graph is None:
@@ -324,6 +347,7 @@ class TalentRunManager:
             await self._emit(run, "run.failed", {"message": str(exc)})
 
     async def _handle_task_event(self, run: TalentRun, chunk: Any) -> None:
+        """处理 LangGraph 任务级事件。"""
         if not isinstance(chunk, dict) or "result" in chunk or "error" in chunk:
             return
         node = str(chunk.get("name", ""))
@@ -349,6 +373,7 @@ class TalentRunManager:
         namespace: tuple[str, ...],
         chunk: Any,
     ) -> bool:
+        """处理节点更新并投影为业务事件。"""
         if not isinstance(chunk, dict):
             return False
         for node, update in chunk.items():
@@ -405,6 +430,7 @@ class TalentRunManager:
         return False
 
     def _collect_evidence(self, run: TalentRun, update: dict[str, Any]) -> None:
+        """汇总本轮证据条目。"""
         raw_items = update.get("evidence_items")
         if not isinstance(raw_items, list):
             return
@@ -426,6 +452,7 @@ class TalentRunManager:
         node: str,
         update: dict[str, Any],
     ) -> None:
+        """投影步骤进度。"""
         if node == "prepare_work_items":
             total = update.get("required_work_items")
             if isinstance(total, int):
@@ -469,6 +496,7 @@ class TalentRunManager:
             )
 
     async def _emit_projected(self, run: TalentRun, event: dict[str, Any]) -> None:
+        """投影并发送节点事件。"""
         event_type = str(event["type"])
         data = dict(event["data"])
         step_id = str(data.get("step_id", ""))
@@ -503,6 +531,7 @@ class TalentRunManager:
         await self._emit(run, event_type, data)
 
     async def _emit_report(self, run: TalentRun, markdown: str) -> None:
+        """运行完成时生成并发送报告事件。"""
         if run.report_emitted:
             return
         run.report_emitted = True
@@ -535,6 +564,7 @@ class TalentRunManager:
         payload: dict[str, Any],
         value: str,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """把用户输入解析为图可接受的恢复值。"""
         interaction_type = payload.get("type")
         if interaction_type == "job_selection":
             options = {

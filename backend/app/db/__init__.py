@@ -1,1 +1,1 @@
-"""Database sessions and persistent models."""
+"""数据库会话与持久化模型。"""

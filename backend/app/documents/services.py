@@ -1,3 +1,5 @@
+"""文档领域服务：上传、版本切换、解析触发与查询。"""
+
 import hashlib
 import json
 import logging

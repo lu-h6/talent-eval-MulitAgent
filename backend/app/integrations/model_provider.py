@@ -1,3 +1,5 @@
+"""模型工厂：对话模型、Judge 模型、Embedding 与 Rerank 的构造与配置校验。"""
+
 import logging
 
 from langchain_community.embeddings import DashScopeEmbeddings

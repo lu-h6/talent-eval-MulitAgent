@@ -1,3 +1,5 @@
+"""人才工具 MCP 客户端：连接并调用远端 MCP 服务。"""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

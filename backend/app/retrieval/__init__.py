@@ -1,1 +1,1 @@
-"""Evidence indexing, retrieval, query planning, and citations."""
+"""证据索引、检索、查询计划与引用。"""

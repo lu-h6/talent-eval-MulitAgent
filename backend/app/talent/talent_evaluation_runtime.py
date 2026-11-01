@@ -1,3 +1,5 @@
+"""运行时装配：用项目模型构建分发图与报告图并导出 graph / report_graph。"""
+
 from __future__ import annotations
 
 import logging

@@ -1,3 +1,5 @@
+"""对象存储（MinIO/S3）客户端封装：上传、下载与预签名地址。"""
+
 import logging
 from io import BytesIO
 
@@ -18,6 +20,7 @@ class ObjectStore:
     """
 
     def __init__(self, settings: Settings | None = None):
+        """初始化客户端、桶名与对外访问地址前缀。"""
         self.settings = settings or get_settings()
         # 用于内部读写（服务端可直接访问的端点）
         self.client = boto3.client(

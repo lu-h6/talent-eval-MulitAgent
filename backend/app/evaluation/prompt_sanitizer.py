@@ -1,4 +1,4 @@
-"""Replace PII in a prompt before it is sent to an external model."""
+"""提示词脱敏：发送给外部模型前，先把个人身份信息替换为占位符。"""
 from __future__ import annotations
 
 from collections import Counter
@@ -17,11 +17,12 @@ DETECTORS = (
 
 
 def sanitize_prompt(original_prompt: str) -> str:
-    """Return a copy of the prompt with common PII replaced by placeholders."""
+    """把姓名、邮箱、身份证号与手机号替换为带编号的占位符，返回脱敏后的文本。"""
     indexes: Counter[str] = Counter()
     placeholders: dict[tuple[str, str], str] = {} # 映射关系
 
     def replace(pii_type: str, value: str) -> str:
+        """为同一类、同一取值的敏感片段分配稳定占位符（同类按出现顺序编号）。"""
         key = (pii_type, value)
         if key not in placeholders:
             indexes[pii_type] += 1

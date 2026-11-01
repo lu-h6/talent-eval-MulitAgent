@@ -1,3 +1,5 @@
+"""混合检索：向量召回 + 关键词召回 + 重排。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

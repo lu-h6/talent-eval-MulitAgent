@@ -1,3 +1,9 @@
+"""人才请求处理子图：把自然语言请求编译为结构化查询计划，并支持多轮增删改与 HITL 修订。
+
+主要流程：receive_request → interpret_input →（岗位匹配 lookup/confirm）→ build_plan
+→（可选）filter_candidates → 空集/歧义时进入 resolve_requirements 等待人工修订后重新编译。
+状态里的 messages 承载多轮上下文，talent_request 保存上一轮的编译结果。"""
+
 from __future__ import annotations
 
 from app.evaluation.case import capture_call, EvaluationModule, safe_record
@@ -55,6 +61,7 @@ RequestStatus = Literal[
 
 
 class JobMatch(TypedDict):
+    """岗位匹配结果：岗位编码、名称、匹配方式与分数。"""
     job_code: str
     name: str
     match_score: float
@@ -64,12 +71,14 @@ class JobMatch(TypedDict):
 
 
 class TargetJob(TypedDict):
+    """最终锁定的岗位（进入人才要求与查询计划）。"""
     job_code: str
     name: str
     version: int
 
 
 class TalentRequestDraft(BaseModel):
+    """请求草案：输入模式、岗位查询、硬条件、语义要求与澄清项。"""
     input_mode: RequestInputMode
     job_query: str | None = None
     filters: list[FilterCondition] = Field(default_factory=list)
@@ -79,16 +88,19 @@ class TalentRequestDraft(BaseModel):
 
 
 class TalentRequestRevision(BaseModel):
+    """在草案之上补充本轮修订动作与修订说明。"""
     draft: TalentRequestDraft
     revision_action: Literal["initial", "add", "update", "remove"] = "initial"
     revision_summary: str = "建立初始人才要求"
 
 
 class TalentRequestUnderstanding(TalentRequestRevision):
+    """带会话标题的完整理解结果（首轮生成、后续沿用）。"""
     conversation_title: str = Field(min_length=1, max_length=80)
 
 
 class TalentRequestInput(TypedDict, total=False):
+    """子图输入：多轮消息与兼容用的原始请求文本。"""
     messages: Annotated[list[AnyMessage], add_messages]
     request_text: str
     talent_request: dict[str, Any]
@@ -96,6 +108,7 @@ class TalentRequestInput(TypedDict, total=False):
 
 
 class TalentRequestOutput(TypedDict):
+    """子图输出：请求、计划、候选人与修订信息。"""
     messages: Annotated[list[AnyMessage], add_messages]
     status: RequestStatus
     input_mode: RequestInputMode
@@ -114,6 +127,7 @@ class TalentRequestOutput(TypedDict):
 
 
 class TalentRequestState(TypedDict, total=False):
+    """子图状态：消息、草案、岗位、计划、候选人与修订记录。"""
     messages: Annotated[list[AnyMessage], add_messages]
     request_text: str
     input_mode: RequestInputMode
@@ -140,6 +154,7 @@ CaseRecorder = Callable[[EvaluationCaseDraft], Any]
 
 
 def _receive_request(state: TalentRequestState, runtime: Runtime[DecisionContext]) -> dict[str, Any]:
+    """校验租户上下文，并把本轮输入规整为 request_text 与消息列表。"""
     if not runtime.context.tenant_id.strip():
         raise ValueError("Runtime Context 中的 tenant_id 不能为空")
     if not runtime.context.permission_scopes:
@@ -174,6 +189,7 @@ def _call_request_interpreter(
     context: DecisionContext,
     case_recorder: CaseRecorder | None,
 ) -> TalentRequestUnderstanding:
+    """调用解释器（兼容两参旧签名与四参新签名），并采集评测用例。"""
     started_at = perf_counter()
     try:
         parameters = inspect.signature(interpreter).parameters
@@ -249,10 +265,12 @@ def _interpret_input(
     request_interpreter: RequestInterpreter,
     case_recorder: CaseRecorder | None,
 ):
+    """解释本轮输入，写入草案、输入模式与修订动作。"""
     def interpret_input(
         state: TalentRequestState,
         runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
+        """节点实现：解释本轮输入并写入草案。"""
         understanding = _call_request_interpreter(
             request_interpreter,
             state,
@@ -274,16 +292,20 @@ def _interpret_input(
 
 
 def _route_input(state: TalentRequestState) -> Literal["lookup_jobs", "build_plan"]:
+    """按输入模式分流：岗位名走岗位匹配，详细要求直接编译计划。"""
     return "lookup_jobs" if state["input_mode"] == "job_name" else "build_plan"
 
 
 def _lookup_jobs(job_lookup: JobLookup, case_recorder=None):
+    """查询岗位候选并采集岗位匹配用例。"""
     def lookup_jobs(state: TalentRequestState, runtime: Runtime[DecisionContext]) -> dict[str, Any]:
+        """节点实现：查询岗位候选。"""
         job_query = str(state["draft"].get("job_query") or state["request_text"])
 
         # 岗位匹配 Case 要在查询完成后、Graph 路由前采集。
         # 输出同时保存完整候选列表和本次路由结果，避免后续只看到最终岗位，无法判断问题来自名称匹配还是岗位确认分支。
         def match_and_route():
+            """查询岗位并计算路由结果（用于用例采集）。"""
             matches = job_lookup(job_query, runtime.context)
             return {"matches": matches, "route": _route_job_matches({"job_matches": matches})}
 
@@ -300,6 +322,7 @@ def _lookup_jobs(job_lookup: JobLookup, case_recorder=None):
 def _route_job_matches(
     state: TalentRequestState,
 ) -> Literal["select_exact_job", "confirm_job", "no_job_match"]:
+    """按精确/模糊匹配情况决定自动确认、人工确认还是无匹配。"""
     exact_matches = [item for item in state["job_matches"] if item["match_type"] == "exact"]
     if len(exact_matches) == 1:
         return "select_exact_job"
@@ -309,11 +332,13 @@ def _route_job_matches(
 
 
 def _select_exact_job(state: TalentRequestState) -> dict[str, Any]:
+    """唯一精确匹配时自动选中该岗位。"""
     selected = next(item for item in state["job_matches"] if item["match_type"] == "exact")
     return {"selected_job": selected, "status": "job_confirmed"}
 
 
 def _confirm_job(state: TalentRequestState) -> dict[str, Any]:
+    """多个候选时中断，等待用户选择或取消。"""
     selection = interrupt(
         {
             "type": "job_selection",
@@ -349,6 +374,7 @@ def _confirm_job(state: TalentRequestState) -> dict[str, Any]:
 
 
 def _route_job_confirmation(state: TalentRequestState) -> str:
+    """确认后继续编译岗位条件，取消则结束子图。"""
     return "compile_selected_job" if state["status"] == "job_confirmed" else END
 
 
@@ -356,10 +382,12 @@ def _compile_selected_job(
     request_interpreter: RequestInterpreter,
     case_recorder: CaseRecorder | None,
 ):
+    """结合已确认岗位 JD 重新编译请求条件。"""
     def compile_selected_job(
         state: TalentRequestState,
         runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
+        """节点实现：按已确认岗位重新编译条件。"""
         understanding = _call_request_interpreter(
             request_interpreter,
             state,
@@ -378,6 +406,7 @@ def _compile_selected_job(
 
 
 def _build_plan(state: TalentRequestState) -> dict[str, Any]:
+    """把草案固化为 talent_request 与 QueryPlan，并判断计划是否可执行。"""
     draft = TalentRequestDraft.model_validate(state["draft"])
     selected_job = state.get("selected_job")
     target_job: TargetJob | None = None
@@ -416,6 +445,7 @@ def _build_plan(state: TalentRequestState) -> dict[str, Any]:
 
 
 def _no_job_match(state: TalentRequestState) -> dict[str, Any]:
+    """岗位无匹配时产出澄清项并结束。"""
     clarification = {
         "expression": state["request_text"],
         "reason": "未找到可确认的岗位 JD",
@@ -434,18 +464,21 @@ def _no_job_match(state: TalentRequestState) -> dict[str, Any]:
 
 
 def _route_after_plan(state: TalentRequestState) -> str:
+    """计划不可执行时进入人工修订，否则继续候选人筛选。"""
     if state["status"] == "clarification_required":
         return "resolve_requirements"
     return "filter_candidates"
 
 
 def _route_candidates(state: TalentRequestState) -> str:
+    """候选人为空时进入修订流程，否则结束。"""
     if state["status"] == "candidates_empty":
         return "resolve_requirements"
     return END
 
 
 def _route_resolution(state: TalentRequestState) -> str:
+    """修订完成后回到解释节点，否则结束。"""
     if state["status"] == "request_revised":
         return "interpret_input"
     return END
@@ -466,6 +499,7 @@ def _await_decision(payload: dict[str, Any], parse: Callable[[Any], dict[str, An
 
 
 def _require_interaction(decision: Any, expected_id: str) -> dict[str, Any]:
+    """校验恢复数据的 interaction_id 与当前暂停点一致。"""
     if not isinstance(decision, dict):
         raise ValueError("恢复数据必须是 JSON 对象")
     if decision.get("interaction_id") != expected_id:
@@ -474,7 +508,9 @@ def _require_interaction(decision: Any, expected_id: str) -> dict[str, Any]:
 
 
 def _filter_candidates_node(candidate_filter: CandidateFilter):
+    """执行候选人筛选并标记候选集状态。"""
     def filter_candidates(state: TalentRequestState, runtime: Runtime[DecisionContext]) -> dict[str, Any]:
+        """节点实现：执行候选人筛选。"""
         plan = QueryPlan.model_validate(state["query_plan"])
         candidate_ids = candidate_filter(plan.filters, runtime.context)
         if candidate_ids:
@@ -506,10 +542,12 @@ def _diagnose_filters(
 
 
 def _resolve_requirements():
+    """计划受阻或候选为空时中断，等待用户修订完整要求。"""
     def resolve_requirements(
         state: TalentRequestState,
         runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
+        """节点实现：等待并处理人工修订。"""
         plan_version = state.get("plan_version", 0)
         interaction_id = f"rr-v{plan_version}"
         reason_code = "plan_blocked" if state["status"] == "clarification_required" else "empty_candidates"
@@ -550,6 +588,7 @@ def _resolve_requirements():
         }
 
         def parse(decision: Any) -> dict[str, Any]:
+            """校验恢复数据并解析修订动作。"""
             decision = _require_interaction(decision, interaction_id)
             action = decision.get("action")
             if action == "cancel":
@@ -591,6 +630,7 @@ def _apply_relaxations(
     current: list[FilterCondition],
     relaxations: list[dict[str, Any]],
 ) -> tuple[list[FilterCondition], list[dict[str, Any]]]:
+    """按用户选择的条件放宽（移除或更新）重算过滤条件。"""
     updated = list(current)
     changes: list[dict[str, Any]] = []
     for item in relaxations:
@@ -622,6 +662,7 @@ def _apply_relaxations(
 
 
 def _resolve_conditions(state: TalentRequestState) -> dict[str, Any]:
+    """条件歧义时中断，等待用户修订过滤条件与语义要求。"""
     plan_version = state.get("plan_version", 0)
     interaction_id = f"cc-v{plan_version}"
     draft = dict(state["draft"])
@@ -636,6 +677,7 @@ def _resolve_conditions(state: TalentRequestState) -> dict[str, Any]:
     }
 
     def parse(decision: Any) -> dict[str, Any]:
+        """校验恢复数据并解析条件修订。"""
         decision = _require_interaction(decision, interaction_id)
         action = decision.get("action")
         if action == "cancel":
@@ -702,10 +744,12 @@ def _resolve_conditions(state: TalentRequestState) -> dict[str, Any]:
 
 
 def _resolve_empty_candidates(candidate_filter: CandidateFilter):
+    """候选为空时给出诊断并等待用户放宽条件。"""
     def resolve_empty_candidates(
         state: TalentRequestState,
         runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
+        """节点实现：等待用户放宽条件后重试。"""
         plan = QueryPlan.model_validate(state["query_plan"])
         plan_version = state.get("plan_version", 0)
         interaction_id = f"ec-v{plan_version}"
@@ -722,6 +766,7 @@ def _resolve_empty_candidates(candidate_filter: CandidateFilter):
         }
 
         def parse(decision: Any) -> dict[str, Any]:
+            """校验恢复数据并解析放宽操作。"""
             decision = _require_interaction(decision, interaction_id)
             action = decision.get("action")
             if action == "cancel":
@@ -766,6 +811,7 @@ def build_talent_request_graph(
     case_recorder: CaseRecorder | None = None,
     checkpointer: Any | None = None,
 ):
+    """组装并编译请求处理子图；传入 candidate_filter 时追加候选人与修订节点。"""
     builder = StateGraph(
         TalentRequestState,
         context_schema=DecisionContext,
@@ -841,6 +887,7 @@ def model_request_interpreter(
     selected_job: JobMatch | None = None,
     conversation_title: str = "",
 ) -> TalentRequestUnderstanding:
+    """用项目对话模型解释消息窗口与上一轮请求，输出本轮完整草案。"""
     model = get_chat_model(temperature=0)
     if model is None:
         raise RuntimeError("任务理解模型未配置，请设置 DASHSCOPE_API_KEY")
@@ -875,6 +922,7 @@ def model_request_interpreter(
 
 
 def database_job_lookup(query: str, context: DecisionContext) -> list[JobMatch]:
+    """基于数据库的岗位检索实现。"""
     service = TalentToolService(session_factory=SessionLocal)
     tool_context = TalentToolContext(
         tenant_id=context.tenant_id,
@@ -886,6 +934,7 @@ def database_job_lookup(query: str, context: DecisionContext) -> list[JobMatch]:
 
 
 def database_candidate_filter(filters: list[FilterCondition], context: DecisionContext) -> list[str]:
+    """基于数据库的条件筛选实现。"""
     service = TalentToolService(session_factory=SessionLocal)
     tool_context = TalentToolContext(
         tenant_id=context.tenant_id,

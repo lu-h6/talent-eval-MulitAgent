@@ -1,3 +1,5 @@
+"""评估分发：生成动态评估维度，并按候选人 × 维度并发执行证据抽取。"""
+
 from __future__ import annotations
 
 import json
@@ -155,6 +157,7 @@ retrieval_hints 应给出可直接用于候选人证据检索的关键词组合�
 class BranchExecutionError(RuntimeError):
     """分支执行错误：包含错误码与消息。"""
     def __init__(self, code: str, message: str):
+        """记录失败的工作项标识。"""
         super().__init__(message)
         self.code = code
 
@@ -599,6 +602,7 @@ def build_query_plan_candidate_provider(service: Any) -> CandidateProvider:
         query_plan: dict[str, Any],
         context: DecisionContext,
     ) -> list[str]:
+        """用查询计划筛选候选人。"""
         filters = [
             FilterCondition.model_validate(item)
             for item in query_plan.get("filters", [])
@@ -679,6 +683,7 @@ def _generate_dimensions(dimension_generator: DimensionGenerator):
         生成的评估维度计划
     """
     def generate_dimensions(state: TalentEvaluationDispatchState) -> dict[str, Any]:
+        """调用模型生成评估维度计划。"""
         plan = dimension_generator(
             state["talent_request"],
             state["query_plan"],
@@ -734,6 +739,7 @@ def _retrieve_candidates(candidate_provider: CandidateProvider):
         state: TalentEvaluationDispatchState,
         runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
+        """候选人为空时回落到查询计划筛选。"""
         candidate_ids = candidate_provider(state["query_plan"], runtime.context)
         logger.info(
             "event=graph_node_completed function=retrieve_candidates "
@@ -753,6 +759,7 @@ def _prepare_work_items(max_work_items: int):
     构造“准备工作项”节点：生成候选人×维度的取证工作项并做容量检查。
     """
     def prepare_work_items(state: TalentEvaluationDispatchState) -> dict[str, Any]:
+        """把候选人 × 维度展开为工作项并校验上限。"""
         dimensions = [
             EvaluationDimension.model_validate(item) for item in state["dimensions"]
         ]
@@ -835,6 +842,7 @@ def _run_assessment_branch(branch_worker: BranchWorker):
         state: dict[str, Any],
         runtime: Runtime[DecisionContext],
     ) -> dict[str, Any]:
+        """执行单个工作项的证据抽取与评分。"""
         work_item = AssessmentWorkItem.model_validate(state["work_item"])
         logger.info(
             "event=graph_branch_started function=run_assessment_branch "

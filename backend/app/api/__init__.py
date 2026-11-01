@@ -1,1 +1,1 @@
-"""HTTP routes and request schemas."""
+"""HTTP 路由与请求模型。"""

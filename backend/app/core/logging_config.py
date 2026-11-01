@@ -1,3 +1,5 @@
+"""日志初始化：按天与按服务名切分文件，并同时输出到控制台。"""
+
 import logging  # Python 标准日志库
 import re  # 正则，用于清洗服务名避免非法文件名
 import sys  # 标准输出
@@ -25,6 +27,7 @@ class DailyFileHandler(logging.Handler):
         filename_prefix: str,
         date_provider: Callable[[], date] = date.today,
     ) -> None:
+        """初始化按天切分的日志文件处理器。"""
         super().__init__()
         self.log_dir = log_dir                # 日志存放目录
         self.filename_prefix = filename_prefix  # 文件名前缀（如 backend、backend-error）

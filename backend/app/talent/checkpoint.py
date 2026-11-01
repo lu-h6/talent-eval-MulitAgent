@@ -1,3 +1,5 @@
+"""LangGraph 的 Postgres checkpointer：连接池、建表与生命周期管理。"""
+
 from __future__ import annotations
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -15,6 +17,7 @@ class PostgresCheckpointRuntime:
     """管理 FastAPI 进程内的异步连接池与 LangGraph checkpointer。"""
 
     def __init__(self, database_url: str) -> None:
+        """创建异步连接池与 Postgres checkpointer。"""
         self._pool = AsyncConnectionPool(
             conninfo=checkpoint_dsn(database_url),
             open=False,
@@ -27,9 +30,11 @@ class PostgresCheckpointRuntime:
         self.saver = AsyncPostgresSaver(self._pool)
 
     async def start(self) -> AsyncPostgresSaver:
+        """打开连接池并建表，返回 checkpointer。"""
         await self._pool.open()
         await self.saver.setup()
         return self.saver
 
     async def close(self) -> None:
+        """关闭连接池。"""
         await self._pool.close()

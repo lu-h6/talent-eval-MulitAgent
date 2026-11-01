@@ -1,3 +1,5 @@
+"""检索结果重排（Rerank）客户端。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,6 +19,7 @@ class Reranker(Protocol):
         documents: Sequence[str],
         top_n: int,
     ) -> list[dict]:
+        """对候选结果重排。"""
         ...
 
 
@@ -31,6 +34,7 @@ class DashScopeReranker:
     """基于 DashScope TextReRank 的 Rerank 实现。"""
 
     def __init__(self, *, model: str, api_key: str) -> None:
+        """初始化 DashScope rerank 客户端。"""
         self.model = model  # Rerank 模型名
         self.api_key = api_key  # DashScope API Key
 

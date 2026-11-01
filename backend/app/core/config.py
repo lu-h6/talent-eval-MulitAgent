@@ -1,3 +1,5 @@
+"""应用配置：从环境变量/.env 读取数据库、对象存储、Redis、Milvus、模型与日志配置。"""
+
 from functools import lru_cache
 from pathlib import Path
 

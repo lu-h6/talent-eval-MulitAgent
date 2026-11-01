@@ -1,3 +1,5 @@
+"""接口层共享的请求/响应模型定义。"""
+
 from pydantic import BaseModel, Field
 
 

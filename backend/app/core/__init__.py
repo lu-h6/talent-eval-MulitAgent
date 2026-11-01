@@ -1,1 +1,1 @@
-"""Application configuration and logging."""
+"""应用配置与日志。"""

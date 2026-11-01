@@ -1,3 +1,5 @@
+"""报告合成：单维度评分、跨维度一致性检查、聚合排序与 Markdown 渲染。"""
+
 from __future__ import annotations
 
 import json
@@ -367,6 +369,7 @@ def build_structured_dimension_scorer(
             branch: BranchEvidenceDraft,
             evidence_items: list[EvidenceItem],
     ) -> DimensionJudgement:
+        """调用模型对单个候选人的维度打分。"""
         model = model_provider()
         if model is None:
             raise RuntimeError("评分模型未配置")
@@ -418,6 +421,7 @@ def build_structured_report_writer(
             candidates: list[CandidateAssessment],
             evidence_items: list[EvidenceItem],
     ) -> ReportDraft:
+        """调用模型写出最终报告。"""
         model = model_provider()
         if model is None:
             raise RuntimeError("报告模型未配置")
@@ -964,6 +968,7 @@ def _review_consistency(
                 item: tuple[str, list[DimensionAssessment]],
         ) -> list[ConsistencyIssue]:
             # 对单个候选人的多维度评估做一致性检查并校验
+            """对单个候选人做跨维度一致性检查。"""
             candidate_id, candidate_assessments = item
             review = ConsistencyReview.model_validate(
                 consistency_reviewer(
@@ -1066,6 +1071,7 @@ def _compose_report(report_writer: ReportWriter):
     """构造“撰写报告”节点：调用报告撰写器生成报告草稿。"""
 
     def compose_report(state: TalentEvaluationReportState) -> dict[str, Any]:
+        """聚合评分、排序并渲染报告。"""
         candidates = [
             CandidateAssessment.model_validate(item)
             for item in state["candidate_assessments"]

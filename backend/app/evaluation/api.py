@@ -1,4 +1,4 @@
-"""Raw Cases and problem signals in the existing course-demo application."""
+"""评测接口：用例采集、人工标注、Judge 评分、数据集固化与回放。"""
 from typing import Literal
 from datetime import datetime
 from types import SimpleNamespace
@@ -20,6 +20,7 @@ router = APIRouter(prefix='/api/evaluation', tags=['evaluation'])
 
 
 class FeedbackInput(BaseModel):
+    """人工反馈请求体：module 级反馈必须带 case_id，run 级反馈不能带。"""
     source_run_id: str = Field(min_length=1, max_length=64)
     case_id: UUID | None = None
     feedback_scope: Literal['module', 'run']
@@ -27,12 +28,14 @@ class FeedbackInput(BaseModel):
 
     @model_validator(mode='after')
     def check_scope(self):
+        """校验反馈范围与 case_id 的一致性。"""
         if (self.feedback_scope == 'module') != (self.case_id is not None):
             raise ValueError('模块反馈必须引用 Case，报告反馈仅关联 Run')
         return self
 
 
 def feedback_json(row):
+    """把一条反馈记录序列化为接口返回结构。"""
     return dict(feedback_id=str(row.id), source_run_id=row.source_run_id,
                 case_id=str(row.case_id) if row.case_id else None,
                 feedback_scope=row.feedback_scope, note=row.note, created_at=row.created_at.isoformat())
@@ -40,6 +43,7 @@ def feedback_json(row):
 
 @router.post('/feedback', status_code=201)
 def create_feedback(payload: FeedbackInput):
+    """写入人工反馈；先校验目标运行与用例是否存在。"""
     with SessionLocal() as db:
         if db.get(TalentRunRecord, payload.source_run_id) is None:
             raise HTTPException(404, 'Run 不存在')
@@ -61,6 +65,7 @@ def list_cases(group_by: Literal['run'] | None = None, source_run_id: str | None
                max_score: int | None = Query(None, ge=0, le=4),
                created_after: datetime | None = None, created_before: datetime | None = None, offset: int = Query(0, ge=0),
                limit: int = Query(100, ge=1, le=200)):
+    """分页查询评测用例，支持按运行、模块与反馈状态过滤。"""
     with SessionLocal() as db:
         direct = exists(select(Feedback.id).where(Feedback.case_id == Case.id))
         run_signal = exists(select(Feedback.id).where(Feedback.source_run_id == Case.source_run_id,
@@ -107,6 +112,7 @@ def list_cases(group_by: Literal['run'] | None = None, source_run_id: str | None
 
 @router.get('/cases/{case_id}')
 def get_case(case_id: UUID):
+    """读取单条用例详情（输出、标注与反馈）。"""
     with SessionLocal() as db:
         row = db.get(Case, case_id)
         if row is None:
@@ -119,15 +125,18 @@ def get_case(case_id: UUID):
 
 
 def row_json(row):
+    """把用例行、标注与反馈状态序列化为列表项。"""
     return {column.name: getattr(row, column.name) for column in row.__table__.columns}
 
 
 class JudgeBatch(BaseModel):
+    """批量评测请求体：待评分的用例 ID 列表。"""
     case_ids: list[UUID] = Field(min_length=1, max_length=20)
 
 
 @router.post('/judge')
 def batch_judge(payload: JudgeBatch):
+    """对指定用例批量调用 Judge 并落库标注结果。"""
     results = []
     for case_id in dict.fromkeys(payload.case_ids):
         try:
@@ -155,6 +164,7 @@ def batch_judge(payload: JudgeBatch):
 
 
 class ConfirmGolden(BaseModel):
+    """确认 Golden 请求体：人工给定的基准输出与数据集划分。"""
     golden_output: dict
     dataset_split: Literal['dev', 'test'] = 'test'
     tags: list[str] = Field(default_factory=list, max_length=20)
@@ -162,6 +172,7 @@ class ConfirmGolden(BaseModel):
 
 @router.post('/cases/{case_id}/confirm')
 def confirm_golden(case_id: UUID, payload: ConfirmGolden):
+    """确认用例的 Golden 输出并冻结为数据集条目。"""
     with SessionLocal() as db:
         case = db.get(Case, case_id)
         if case is None:
@@ -194,6 +205,7 @@ def confirm_golden(case_id: UUID, payload: ConfirmGolden):
 @router.get('/dataset')
 def list_dataset(module_key: EvaluationModule | None = None, dataset_split: Literal['dev', 'test'] | None = None,
                  offset: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=200)):
+    """分页查询已固化的评测数据集条目。"""
     with SessionLocal() as db:
         stmt = select(DatasetItem)
         if module_key:
@@ -205,11 +217,13 @@ def list_dataset(module_key: EvaluationModule | None = None, dataset_split: Lite
 
 
 class ReplayBatch(BaseModel):
+    """回放请求体：待回放的数据集条目 ID 列表。"""
     dataset_item_ids: list[UUID] = Field(min_length=1, max_length=20)
 
 
 @router.post('/replay')
 def batch_replay(payload: ReplayBatch):
+    """在数据集条目上回放模块调用并产出对照结果。"""
     results = []
     for item_id in dict.fromkeys(payload.dataset_item_ids):
         with SessionLocal() as db:

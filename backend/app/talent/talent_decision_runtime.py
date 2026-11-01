@@ -1,3 +1,5 @@
+"""构建运行时决策图（可注入 checkpointer），并导出供 Agent Server 使用的 graph。"""
+
 from __future__ import annotations
 
 from typing import Any
