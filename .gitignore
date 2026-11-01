@@ -1,5 +1,6 @@
 .venv/
 .env
+.env.example
 __pycache__/
 .pytest_cache/
 *.pyc
@@ -11,8 +12,13 @@ sample-data/qa/pptx/
 sample-data/qa/xlsx/
 sample-data/
 output/
-
+docs/
 dist/
 *.zip
 logs/
 backend/.langgraph_api/
+backend/samples/
+backend/scripts/
+
+.idea/
+database/migrations/

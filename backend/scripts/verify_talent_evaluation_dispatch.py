@@ -28,7 +28,7 @@ def _configure_logging(level_name: str) -> None:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="验证第 15 课动态维度与 Subagent 分发链路")
+    parser = argparse.ArgumentParser(description="验证动态维度与 Subagent 分发链路")
     parser.add_argument("--tenant-id", default="course-demo")
     parser.add_argument("--region", default="上海")
     parser.add_argument("--max-concurrency", type=int, default=6)

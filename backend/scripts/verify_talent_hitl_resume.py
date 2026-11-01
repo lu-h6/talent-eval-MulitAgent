@@ -1,4 +1,4 @@
-"""第 17 课：Human-in-the-Loop 与可恢复执行链路验证
+"""Human-in-the-Loop 与可恢复执行链路验证
 
 注入固定任务解释器和内存候选人集合，覆盖：
 - 可执行计划直达 candidates_ready

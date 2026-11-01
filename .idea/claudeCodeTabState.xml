@@ -8,6 +8,8 @@
             <TabSessionState>
               <option name="projectPath" value="E:\PythonProjects\talent-eval-agents\talent-eval-agents" />
               <option name="provider" value="claude" />
+              <option name="sessionId" value="9dca5d69-8629-455b-b3f3-621fb4c7db52" />
+              <option name="cwd" value="E:\PythonProjects\talent-eval-agents\talent-eval-agents" />
               <option name="model" value="claude-haiku-4-5" />
               <option name="permissionMode" value="auto" />
             </TabSessionState>

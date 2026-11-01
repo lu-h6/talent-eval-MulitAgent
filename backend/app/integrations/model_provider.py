@@ -1,7 +1,11 @@
+import logging
+
 from langchain_community.embeddings import DashScopeEmbeddings
 from langchain_openai import ChatOpenAI
 
 from app.core.config import Settings, get_settings
+
+logger = logging.getLogger(__name__)
 
 
 def get_chat_model(model_name: str | None = None, temperature: float = 0.2, settings: Settings | None = None) -> ChatOpenAI | None:
@@ -28,6 +32,37 @@ def get_chat_model(model_name: str | None = None, temperature: float = 0.2, sett
         api_key=value.dashscope_api_key,
         base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",  # DashScope 的 OpenAI 兼容端点
         temperature=None if "kimi" in model else temperature,  # kimi 模型不支持此参数
+    )
+
+
+def get_judge_model(
+    model_name: str | None = None,
+    temperature: float = 0.2,
+    settings: Settings | None = None,
+) -> ChatOpenAI | None:
+    """获取评测用的 Judge 模型（可与对话模型分开配置）。
+
+    Judge 走独立的模型名 / API Key / 端点，便于把"被测模型"和"评分模型"
+    分离开，避免自评。三项配置任一为空时返回 None。
+
+    Args:
+        model_name: 可选，覆盖配置中的 judge_model。
+        temperature: 生成随机度。
+        settings: 可选，配置对象；缺省使用全局缓存的配置。
+
+    Returns:
+        配置好的 ChatOpenAI 实例；未配置完整时返回 None。
+    """
+    value = settings or get_settings()
+    model = model_name or value.judge_model
+    if not value.judge_api_key or not value.judge_base_url or not model:
+        logger.info("judge_model_not_configured")
+        return None
+    return ChatOpenAI(
+        model=model,
+        api_key=value.judge_api_key,
+        base_url=value.judge_base_url,
+        temperature=temperature,
     )
 
 

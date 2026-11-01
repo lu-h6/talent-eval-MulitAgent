@@ -66,9 +66,12 @@ class TalentDecisionState(TypedDict, total=False):
 
 @dataclass(frozen=True)
 class DecisionContext:
-    """决策上下文：携带租户与权限范围。"""
+    """决策上下文：携带租户、权限范围与本次运行标识。"""
     tenant_id: str
     permission_scopes: tuple[str, ...]
+    run_id: str = ""  # 本次运行 ID（流式运行时由运行管理器注入）
+    conversation_id: str = ""  # 所属会话 ID
+    turn_no: int = 0  # 当前轮次（从 1 开始）
 
 
 CandidateProvider = Callable[[TalentRequest, DecisionContext], list[str]] # 候选人提供者
@@ -167,7 +170,7 @@ def _no_candidates(_: TalentDecisionState) -> dict:
 
 
 def build_talent_decision_graph(candidate_provider: CandidateProvider):
-    """组装并编译“人才决策”图（第 11 课简化版占位实现）。
+    """组装并编译“人才决策”图（简化版占位实现）。
 
     流程：接收请求 → 准备请求 → 检索候选人 → 评估 → 组报告 → 校验（可重试）。
     """

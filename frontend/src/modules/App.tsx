@@ -1,10 +1,58 @@
 import React, { useEffect, useState } from "react";
 import { LegacyProfiles } from "./LegacyProfiles";
 import { ModuleShell } from "./ModuleShell";
+import { API_BASE_URL } from "./api";
 import { MODULE_META, MODULE_ORDER, navigateToModule, parseModuleHash, type ModuleId } from "./nav";
 import { DashboardPage } from "./pages/DashboardPage";
-import { EvaluationCenterPage } from "./pages/EvaluationCenterPage";
-import { RecommendationPage } from "./pages/RecommendationPage";
+import { EvaluationCenter } from "./pages/EvaluationCenter";
+import { TalentChatPage } from "./pages/TalentChatPage";
+
+type ViewContext = {
+  navigate: (module: ModuleId) => void;
+  collapsed: boolean;
+  toggleSidebar: () => void;
+};
+
+/**
+ * 模块 → 渲染方式。
+ * "shell"：内容区挂进本地 ModuleShell（自带左侧导航）；
+ * "fullBleed"：整屏渲染，页面自带导航。
+ */
+export const MODULE_LAYOUT: Record<ModuleId, "shell" | "fullBleed"> = {
+  dashboard: "shell",
+  profiles: "shell",
+  recommendation: "fullBleed",
+  evaluation: "fullBleed",
+};
+
+/**
+ * 模块 → 页面实现。换页面 / 换皮肤只改这一张表，
+ * 路由、hash 同步与导航回调都不用动。
+ */
+export const MODULE_VIEWS: Record<ModuleId, (ctx: ViewContext) => React.ReactNode> = {
+  dashboard: (ctx) => <DashboardPage onNavigate={ctx.navigate} />,
+  profiles: () => <LegacyProfiles active />,
+  recommendation: (ctx) => (
+    <TalentChatPage
+      apiBase={API_BASE_URL}
+      sidebarCollapsed={ctx.collapsed}
+      onToggleSidebar={ctx.toggleSidebar}
+      onOpenRecords={() => ctx.navigate("profiles")}
+      onOpenDashboard={() => ctx.navigate("dashboard")}
+      onOpenEvaluation={() => ctx.navigate("evaluation")}
+    />
+  ),
+  evaluation: (ctx) => (
+    <EvaluationCenter
+      apiBase={API_BASE_URL}
+      sidebarCollapsed={ctx.collapsed}
+      onToggleSidebar={ctx.toggleSidebar}
+      onRecords={() => ctx.navigate("profiles")}
+      onChat={() => ctx.navigate("recommendation")}
+      onDashboard={() => ctx.navigate("dashboard")}
+    />
+  ),
+};
 
 export function App() {
   const [activeModule, setActiveModule] = useState<ModuleId>(() => parseModuleHash(window.location.hash));
@@ -40,6 +88,17 @@ export function App() {
     navigateToModule(module);
   }
 
+  const context: ViewContext = {
+    navigate,
+    collapsed,
+    toggleSidebar: () => setCollapsed((value) => !value),
+  };
+  const view = MODULE_VIEWS[activeModule](context);
+
+  if (MODULE_LAYOUT[activeModule] === "fullBleed") {
+    return <>{view}</>;
+  }
+
   return (
     <ModuleShell
       activeModule={activeModule}
@@ -48,10 +107,7 @@ export function App() {
       onCollapseChange={setCollapsed}
       onNavigate={navigate}
     >
-      <LegacyProfiles active={activeModule === "profiles"} />
-      {activeModule === "dashboard" && <DashboardPage onNavigate={navigate} />}
-      {activeModule === "recommendation" && <RecommendationPage />}
-      {activeModule === "evaluation" && <EvaluationCenterPage />}
+      {view}
     </ModuleShell>
   );
 }

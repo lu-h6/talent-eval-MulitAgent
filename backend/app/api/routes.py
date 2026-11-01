@@ -41,12 +41,16 @@ from app.db.models import (
     Document,  # 文档实体
     DocumentVersion,  # 文档版本
     EmployeeProfile,  # 员工档案
+    EvaluationCaseRecord,  # 评测用例
+    EvaluationDatasetItemRecord,  # 评测数据集条目
     EvidenceIndexJob,  # 证据索引任务
     FileObject,  # 文件对象
     IndexStatus,  # 索引状态枚举
     KnowledgeBase,  # 知识库
     ParseArtifact,  # 解析工件
     ParseJob,  # 解析任务
+    TalentConversationRecord,  # 会话记录
+    TalentRunRecord,  # 运行记录
 )
 from app.integrations.object_store import ObjectStore  # 对象存储客户端
 from app.documents.services import current_version, parse_version, upload_document
@@ -54,6 +58,19 @@ from app.documents.services import current_version, parse_version, upload_docume
 # 统一 API 前缀
 router = APIRouter(prefix="/api")
 logger = logging.getLogger(__name__)
+
+
+@router.get("/dashboard/metrics")
+def dashboard_metrics(db: Session = Depends(get_db)) -> dict[str, int]:
+    """首页看板指标：核心业务表的记录数。"""
+    return {
+        "employee_count": db.scalar(select(func.count()).select_from(EmployeeProfile)) or 0,
+        "document_count": db.scalar(select(func.count()).select_from(Document)) or 0,
+        "conversation_count": db.scalar(select(func.count()).select_from(TalentConversationRecord)) or 0,
+        "run_count": db.scalar(select(func.count()).select_from(TalentRunRecord)) or 0,
+        "case_count": db.scalar(select(func.count()).select_from(EvaluationCaseRecord)) or 0,
+        "dataset_count": db.scalar(select(func.count()).select_from(EvaluationDatasetItemRecord)) or 0,
+    }
 
 
 class EmployeeInput(BaseModel):

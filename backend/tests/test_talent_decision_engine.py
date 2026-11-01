@@ -97,6 +97,7 @@ def test_event_demo_prints_parent_and_child_nodes_in_execution_order():
     events = collect_demo_events()
 
     assert [(item["scope"], item["node"]) for item in events] == [
+        ("main", "begin_turn"),
         ("request_subgraph", "receive_request"),
         ("request_subgraph", "compile_request"),
         ("request_subgraph", "filter_candidates"),
@@ -108,7 +109,7 @@ def test_event_demo_prints_parent_and_child_nodes_in_execution_order():
         ("report_subgraph", "compose_report"),
         ("main", "report_subgraph"),
     ]
-    assert events[2]["update"]["status"] == "candidates_ready"
-    assert events[5]["update"]["status"] == "branches_ready"
-    assert events[8]["update"]["ranking"] == ["C001", "C002"]
+    assert events[3]["update"]["status"] == "candidates_ready"
+    assert events[6]["update"]["status"] == "branches_ready"
+    assert events[9]["update"]["ranking"] == ["C001", "C002"]
     assert events[-1]["update"]["status"] == "completed"

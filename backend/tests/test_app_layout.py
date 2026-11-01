@@ -19,7 +19,8 @@ def test_app_root_contains_only_package_and_service_entrypoints():
 
 
 @pytest.mark.parametrize(
-    "package", ["api", "core", "db", "documents", "integrations", "retrieval", "talent"]
+    "package",
+    ["api", "core", "db", "documents", "evaluation", "integrations", "retrieval", "talent"],
 )
 def test_functional_packages_are_importable(package):
     module = importlib.import_module(f"app.{package}")

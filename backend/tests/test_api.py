@@ -9,7 +9,11 @@ def test_health_endpoint_reports_service_ready():
     response = client.get("/api/health")
 
     assert response.status_code == 200
-    assert response.json() == {"service": "talent-document-api", "status": "ok"}
+    assert response.json() == {
+        "service": "talent-document-api",
+        "status": "ok",
+        "talent_runtime": "unavailable",
+    }
 
 
 def test_openapi_exposes_lesson_5_chunking_workflow_without_removed_annotation_endpoints():

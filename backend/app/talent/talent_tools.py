@@ -556,7 +556,7 @@ def build_candidate_provider(
         compile_filters: Callable[[str], list[FilterCondition]],
 ):
     """
-    把第 12 课的结构化筛选服务适配到第 11 课的图契约（provider 形式）。
+    把结构化筛选服务适配到决策图的 provider 契约（provider 形式）。
     Args:
         service (TalentToolService): 人才工具服务实例。
         compile_filters (Callable[[str], list[FilterCondition]]): 筛选条件编译函数，将原始文本转换为结构化筛选条件。

@@ -4,7 +4,7 @@ import pytest
 
 
 def module():
-    assert importlib.util.find_spec('app.retrieval.evidence_pack'), '第 9 课证据整理模块尚未实现'
+    assert importlib.util.find_spec('app.retrieval.evidence_pack'), '证据整理模块尚未实现'
     from app.retrieval import evidence_pack
     return evidence_pack
 

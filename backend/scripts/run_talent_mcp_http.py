@@ -32,7 +32,7 @@ def build_demo_http_server(database_path: str | Path) -> MCPServer:
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="启动第 13 课 Talent MCP Streamable HTTP 演示服务",
+        description="启动 Talent MCP Streamable HTTP 演示服务",
     )
     parser.add_argument("--host", default=DEFAULT_HOST)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)

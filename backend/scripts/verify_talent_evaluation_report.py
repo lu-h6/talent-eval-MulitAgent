@@ -19,7 +19,7 @@ DEFAULT_INPUT_PATH = (
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="验证第 16 课证据评估与报告合成链路"
+        description="验证证据评估与报告合成链路"
     )
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT_PATH)
     return parser
