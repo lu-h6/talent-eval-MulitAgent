@@ -159,7 +159,7 @@ CREATE TABLE chunking_runs (
     status chunking_status NOT NULL DEFAULT 'pending',
     chunk_size INTEGER NOT NULL CHECK (chunk_size > 0),
     chunk_overlap INTEGER NOT NULL DEFAULT 0 CHECK (chunk_overlap >= 0),
-    chunker_version VARCHAR(64) NOT NULL DEFAULT 'lesson-5-v1',
+    chunker_version VARCHAR(64) NOT NULL DEFAULT 'chunker-v1',
     error_message TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     finished_at TIMESTAMPTZ

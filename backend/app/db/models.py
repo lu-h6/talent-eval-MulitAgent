@@ -237,7 +237,7 @@ class ChunkingRun(Base):
     )
     chunk_size: Mapped[int] = mapped_column(Integer)  # 分块大小
     chunk_overlap: Mapped[int] = mapped_column(Integer, default=0)  # 分块重叠
-    chunker_version: Mapped[str] = mapped_column(String(64), default="lesson-5-v1")  # 切块器版本
+    chunker_version: Mapped[str] = mapped_column(String(64), default="chunker-v1")  # 切块器版本
     error_message: Mapped[str | None] = mapped_column(Text)  # 错误信息
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # 结束时间

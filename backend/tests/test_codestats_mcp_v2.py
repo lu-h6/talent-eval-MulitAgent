@@ -3,7 +3,7 @@ from __future__ import annotations
 import anyio
 from mcp import Client
 
-from samples.lesson13.codestats_mcp_v2 import build_server
+from samples.mcp_codestats.codestats_mcp_v2 import build_server
 
 
 def test_codestats_tool_counts_python_lines_and_skips_venv(tmp_path):

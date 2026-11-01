@@ -17,12 +17,12 @@
 随后调用真实的检索与证据加工模块。
 
 ```text
-samples/lesson09/*.md
+samples/evidence_fixtures/*.md
   → scripts/verify_evidence_pack.py
   → app/retrieval/evidence_pack.py
-  → artifacts/lesson09-*.json
+  → artifacts/evidence-*.json
 ```
 
-默认生成 `artifacts/lesson09-fixture-model.json`（固定模型抽取结果）；加 `--live-model` 生成
-`artifacts/lesson09-live-model.json`（使用项目配置的真实模型）。两个产物都是完整接口响应，只用于
+默认生成 `artifacts/evidence-fixture-model.json`（固定模型抽取结果）；加 `--live-model` 生成
+`artifacts/evidence-live-model.json`（使用项目配置的真实模型）。两个产物都是完整接口响应，只用于
 检查运行结果，不会被脚本再次读取。

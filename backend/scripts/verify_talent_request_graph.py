@@ -89,14 +89,14 @@ def main() -> None:
 
     detailed = graph.invoke(
         {"request_text": "筛选上海且有企业知识库经验的人才，有 Agent 评测经验优先"},
-        {"configurable": {"thread_id": "lesson14-detailed"}},
+        {"configurable": {"thread_id": "request-detailed"}},
         context=context,
     )
     print("\n[detailed]\n", _json({"status": detailed["status"], "plan": detailed["query_plan"]}))
 
     exact = graph.invoke(
         {"request_text": "高级 AI 应用工程师"},
-        {"configurable": {"thread_id": "lesson14-exact"}},
+        {"configurable": {"thread_id": "request-exact"}},
         context=context,
     )
     print(
@@ -109,7 +109,7 @@ def main() -> None:
         ),
     )
 
-    config = {"configurable": {"thread_id": "lesson14-ambiguous"}}
+    config = {"configurable": {"thread_id": "request-ambiguous"}}
     interrupted = graph.invoke({"request_text": "AI 应用工程师"}, config, context=context)
     interrupt_payload = interrupted["__interrupt__"][0].value
     print(

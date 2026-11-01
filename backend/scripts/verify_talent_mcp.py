@@ -87,7 +87,7 @@ def demo_context() -> TalentToolContext:
     return TalentToolContext(
         tenant_id="tenant-a",
         permission_scopes=("hr_private",),
-        actor_id="lesson-13",
+        actor_id="mcp-verify",
         run_id="verify-13",
     )
 

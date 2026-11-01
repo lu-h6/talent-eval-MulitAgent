@@ -126,7 +126,7 @@ def client(monkeypatch):
     factory = sessionmaker(engine, expire_on_commit=False)
     monkeypatch.setattr(evaluation_api, 'SessionLocal', factory)
     with factory() as db:
-        row = EvaluationCaseRecord(source_run_id='lesson24-test', conversation_id='c', turn_no=1, module_key='request_understanding', invocation_no=1, input_payload={'messages':[{'role':'human','content':'AI工程师'}]}, output_payload=GOLDEN)
+        row = EvaluationCaseRecord(source_run_id='judge-test', conversation_id='c', turn_no=1, module_key='request_understanding', invocation_no=1, input_payload={'messages':[{'role':'human','content':'AI工程师'}]}, output_payload=GOLDEN)
         db.add(row); db.commit(); cid = str(row.id)
     app = FastAPI(); app.include_router(evaluation_api.router)
     yield TestClient(app), cid

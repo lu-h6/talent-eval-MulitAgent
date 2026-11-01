@@ -1,24 +1,35 @@
+# —— Python 运行环境与缓存 ——
 .venv/
-.env
-.env.example
 __pycache__/
-.pytest_cache/
 *.pyc
-.DS_Store
-frontend/node_modules/
-sample-data/scripts/node_modules
-sample-data/qa/*.png
-sample-data/qa/pptx/
-sample-data/qa/xlsx/
-sample-data/
-output/
-docs/
-dist/
-*.zip
-logs/
-backend/.langgraph_api/
-backend/samples/
-backend/scripts/
+.pytest_cache/
+.pytest-tmp/
 
+# —— 本地配置与密钥（.env.example 是模板，需要提交）——
+.env
+
+# —— 构建产物 ——
+dist/
+*.tsbuildinfo
+frontend/node_modules/
+frontend/.npm-cache/
+
+# —— 运行时产物 ——
+logs/
+output/
+*.zip
+
+# —— 本地 IDE / 助手配置 ——
 .idea/
-database/migrations/
+.claude/
+.DS_Store
+
+# —— LangGraph 本地运行时 ——
+backend/.langgraph_api/
+
+# —— 演示产物与文档（可再生成/不影响运行）——
+backend/artifacts/
+docs/
+
+# —— 本地样例数据（大件二进制，不入库）——
+sample-data/

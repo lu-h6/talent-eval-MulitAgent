@@ -609,7 +609,7 @@ def build_query_plan_candidate_provider(service: Any) -> CandidateProvider:
                 tenant_id=context.tenant_id,
                 permission_scopes=tuple(context.permission_scopes),
                 actor_id="evaluation-dispatch",
-                run_id="lesson-15",
+                run_id="dispatch",
             ),
         )
 

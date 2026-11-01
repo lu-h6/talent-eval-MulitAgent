@@ -85,7 +85,7 @@ def test_detailed_requirement_builds_plan_without_job_lookup():
     )
     result = graph.invoke(
         {"request_text": "筛选上海且有企业知识库经验的人才，有 Agent 评测经验优先"},
-        {"configurable": {"thread_id": "lesson14-detailed"}},
+        {"configurable": {"thread_id": "request-detailed"}},
         context=_context(),
     )
 
@@ -112,7 +112,7 @@ def test_unique_exact_job_match_continues_without_interrupt():
 
     result = graph.invoke(
         {"request_text": "高级 AI 应用工程师"},
-        {"configurable": {"thread_id": "lesson14-exact"}},
+        {"configurable": {"thread_id": "request-exact"}},
         context=_context(),
     )
 
@@ -142,7 +142,7 @@ def test_ambiguous_job_match_interrupts_and_resumes_same_thread():
         job_lookup=lookup,
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "lesson14-ambiguous"}}
+    config = {"configurable": {"thread_id": "request-ambiguous"}}
 
     interrupted = graph.invoke({"request_text": "AI 应用工程师"}, config, context=_context())
 
@@ -175,7 +175,7 @@ def test_ambiguous_job_match_can_be_cancelled():
         job_lookup=lambda query, context: matches,
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "lesson14-cancel-job"}}
+    config = {"configurable": {"thread_id": "request-cancel-job"}}
 
     interrupted = graph.invoke({"request_text": "AI 应用工程师"}, config, context=_context())
     assert interrupted["__interrupt__"][0].value["actions"] == ["select", "cancel"]
@@ -194,7 +194,7 @@ def test_no_job_match_ends_without_building_plan():
 
     result = graph.invoke(
         {"request_text": "量子招聘架构师"},
-        {"configurable": {"thread_id": "lesson14-no-match"}},
+        {"configurable": {"thread_id": "request-no-match"}},
         context=_context(),
     )
 
@@ -227,7 +227,7 @@ def test_confirm_job_debug_interrupt_state():
         job_lookup=lambda query, context: matches,
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "lesson14-debug-interrupt"}}
+    config = {"configurable": {"thread_id": "request-debug-interrupt"}}
 
     # 首次调用：停在此处可以观察 interrupt() 将要抛出的暂停载荷
     interrupted = graph.invoke({"request_text": "AI 应用工程师"}, config, context=_context())

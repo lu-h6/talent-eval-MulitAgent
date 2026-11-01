@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
-from app.talent.lesson14_demo_data import seed_job_descriptions
+from app.talent.demo_jobs import seed_job_descriptions
 from app.db.models import Base, JobDescription
 
 

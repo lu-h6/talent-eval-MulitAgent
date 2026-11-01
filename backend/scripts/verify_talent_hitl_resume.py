@@ -120,7 +120,7 @@ def run_verification() -> None:
 
     ready = graph.invoke(
         {"request_text": "筛选上海的人才"},
-        {"configurable": {"thread_id": "lesson17-ready"}},
+        {"configurable": {"thread_id": "hitl-ready"}},
         context=context,
     )
     print(
@@ -128,7 +128,7 @@ def run_verification() -> None:
         _json({"status": ready["status"], "candidate_ids": ready["candidate_ids"]}),
     )
 
-    config = {"configurable": {"thread_id": "lesson17-empty"}}
+    config = {"configurable": {"thread_id": "hitl-empty"}}
     interrupted = graph.invoke({"request_text": "筛选上海 15 年以上的人才"}, config, context=context)
     payload = interrupted["__interrupt__"][0].value
     print(
@@ -168,7 +168,7 @@ def run_verification() -> None:
         ),
     )
 
-    clarify_config = {"configurable": {"thread_id": "lesson17-clarify"}}
+    clarify_config = {"configurable": {"thread_id": "hitl-clarify"}}
     clarify = graph.invoke({"request_text": "年龄条件矛盾的人才"}, clarify_config, context=context)
     print(
         "\n[clarify-interrupt]\n",
@@ -197,7 +197,7 @@ def run_verification() -> None:
         ),
     )
 
-    stale_config = {"configurable": {"thread_id": "lesson17-stale"}}
+    stale_config = {"configurable": {"thread_id": "hitl-stale"}}
     graph.invoke({"request_text": "筛选上海 15 年以上的人才"}, stale_config, context=context)
     rejected = graph.invoke(
         Command(
@@ -243,7 +243,7 @@ def run_verification() -> None:
         _json({"status": cancelled["status"], "next": list(graph.get_state(stale_config).next)}),
     )
 
-    travel_config = {"configurable": {"thread_id": "lesson17-travel"}}
+    travel_config = {"configurable": {"thread_id": "hitl-travel"}}
     graph.invoke({"request_text": "筛选上海 15 年以上的人才"}, travel_config, context=context)
     history = [
         {

@@ -51,7 +51,7 @@ if __name__ == "__main__":
     context = TalentToolContext(
         tenant_id="course-demo",
         permission_scopes=("hr_private",),
-        actor_id="lesson-12",
+        actor_id="tool-verify",
         run_id="verify-tools",
     )
     evidence_pack = {

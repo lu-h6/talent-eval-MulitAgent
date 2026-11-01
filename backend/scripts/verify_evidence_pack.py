@@ -19,7 +19,7 @@ from app.integrations.milvus_store import EvidenceSearchResult
 from app.integrations.model_provider import get_chat_model
 from app.retrieval.query_plan import QueryPlan
 
-SAMPLE_DIR = Path(__file__).resolve().parents[1] / 'samples' / 'lesson09'
+SAMPLE_DIR = Path(__file__).resolve().parents[1] / 'samples' / 'evidence_fixtures'
 QUERY = '在深圳且在 2025 年上半年担任星河项目总负责人的候选人'
 REQUIREMENT = '在 2025 年 1 月至 6 月担任星河项目总负责人'
 
@@ -39,11 +39,11 @@ def make_demo(live_model=False):
         db.add_all([doc, file]); db.flush()
         version = DocumentVersion(document_id=doc.id, file_object_id=file.id, version_no=1)
         db.add(version); db.flush()
-        job = ParseJob(document_version_id=version.id, parser_name='synthetic-fixture', parser_version='lesson09-v1')
+        job = ParseJob(document_version_id=version.id, parser_name='synthetic-fixture', parser_version='fixture-v1')
         db.add(job); db.flush()
         run = ChunkingRun(parse_job_id=job.id, strategy='markdown', chunk_size=800)
         db.add(run); db.flush()
-        chunk = DocumentChunk(id=uuid5(NAMESPACE_URL, 'lesson09/' + name), chunking_run_id=run.id,
+        chunk = DocumentChunk(id=uuid5(NAMESPACE_URL, 'fixture/' + name), chunking_run_id=run.id,
             document_version_id=version.id, candidate_id='C901', document_type='markdown',
             permission_scope='hr_private', stable_key=name, position=0, content=content,
             markdown_start=0, markdown_end=len(content), heading_path=[content.splitlines()[0].lstrip('# ')])
@@ -96,7 +96,7 @@ def make_demo(live_model=False):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--live-model', action='store_true', help='仅把 samples/lesson09 合成材料发送到配置的模型 API')
+    parser.add_argument('--live-model', action='store_true', help='仅把 samples/evidence_fixtures 合成材料发送到配置的模型 API')
     parser.add_argument('--serve', action='store_true', help='在 18089 端口启动隔离演示 API')
     args = parser.parse_args()
     app, db, chunks, patches, engine = make_demo(args.live_model)
@@ -113,7 +113,7 @@ def main():
         response.raise_for_status()
         body = response.json()
         mode = 'live-model' if args.live_model else 'fixture-model'
-        target = Path('artifacts') / f'lesson09-{mode}.json'
+        target = Path('artifacts') / f'evidence-{mode}.json'
         target.parent.mkdir(exist_ok=True)
         target.write_text(json.dumps(body, ensure_ascii=False, indent=2))
         summary = {'mode': mode, 'candidate_ids': body['candidate_ids'], 'chunk_count': len(body['chunks']),

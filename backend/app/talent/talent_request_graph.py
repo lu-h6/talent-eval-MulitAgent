@@ -880,7 +880,7 @@ def database_job_lookup(query: str, context: DecisionContext) -> list[JobMatch]:
         tenant_id=context.tenant_id,
         permission_scopes=context.permission_scopes,
         actor_id="langsmith-studio",
-        run_id="lesson-14",
+        run_id="request",
     )
     return service.lookup_job_descriptions(query, context=tool_context)
 
@@ -891,7 +891,7 @@ def database_candidate_filter(filters: list[FilterCondition], context: DecisionC
         tenant_id=context.tenant_id,
         permission_scopes=context.permission_scopes,
         actor_id="langsmith-studio",
-        run_id="lesson-17",
+        run_id="request-hitl",
     )
     return service.filter_candidates(filters, context=tool_context)
 

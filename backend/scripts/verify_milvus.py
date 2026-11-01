@@ -13,7 +13,7 @@ def main() -> None:
     store = MilvusEvidenceStore.connect(
         uri=settings.milvus_uri,
         token=settings.milvus_token,
-        collection_name="lesson6_verification_v1",
+        collection_name="milvus_verification_v1",
         dimension=settings.embedding_dimension,
     )
     store.ensure_collection()

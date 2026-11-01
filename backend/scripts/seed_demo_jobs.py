@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.talent.lesson14_demo_data import seed_job_descriptions
+from app.talent.demo_jobs import seed_job_descriptions
 
 
-SAMPLE_PATH = Path(__file__).resolve().parents[1] / "samples" / "lesson14" / "job_descriptions.json"
+SAMPLE_PATH = Path(__file__).resolve().parents[1] / "samples" / "demo_jobs" / "job_descriptions.json"
 
 
 def main() -> None:

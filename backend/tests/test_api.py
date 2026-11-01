@@ -16,7 +16,7 @@ def test_health_endpoint_reports_service_ready():
     }
 
 
-def test_openapi_exposes_lesson_5_chunking_workflow_without_removed_annotation_endpoints():
+def test_openapi_exposes_chunking_workflow_without_removed_annotation_endpoints():
     client = TestClient(create_app())
 
     paths = client.get("/openapi.json").json()["paths"]

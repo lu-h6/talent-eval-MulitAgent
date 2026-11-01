@@ -12,7 +12,7 @@ from utils.file_utils import dump_json
 DEFAULT_INPUT_PATH = (
     Path(__file__).resolve().parents[1]
     / "samples"
-    / "lesson16"
+    / "evaluation_dispatch"
     / "talent_evaluation_dispatch_result_20260921_205347.json"
 )
 
