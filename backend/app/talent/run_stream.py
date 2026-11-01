@@ -79,12 +79,12 @@ class TalentRunManager:
     """驱动决策主图的运行管理器（含事件缓冲与 HITL 恢复）。"""
 
     def __init__(
-        self,
-        *,
-        graph: Any | None = None,
-        context: DecisionContext | None = None,
-        max_concurrency: int = 6,
-        record_store: Any | None = None,
+            self,
+            *,
+            graph: Any | None = None,
+            context: DecisionContext | None = None,
+            max_concurrency: int = 6,
+            record_store: Any | None = None,
     ) -> None:
         """保存图、决策上下文与运行历史存储。"""
         self._graph = graph
@@ -125,12 +125,19 @@ class TalentRunManager:
         return self._graph
 
     async def create_run(
-        self,
-        message: str,
-        *,
-        conversation_id: str | None = None,
+            self,
+            message: str,
+            *,
+            conversation_id: str | None = None,
     ) -> TalentRun:
-        """创建运行、追加起始事件并异步驱动主图。"""
+        """
+        创建运行、追加起始事件并异步驱动主图。
+        Args:
+            message: 运行的初始消息。
+            conversation_id: 运行的会话 ID，默认自动生成。
+        Returns:
+            运行快照。
+        """
         await self.startup()
         conversation_key = conversation_id or str(uuid4())
         run_ids = self._conversation_runs.setdefault(conversation_key, [])
@@ -207,11 +214,11 @@ class TalentRunManager:
         return run
 
     async def wait_for_change(
-        self,
-        run_id: str,
-        cursor: int,
-        *,
-        timeout: float = 15,
+            self,
+            run_id: str,
+            cursor: int,
+            *,
+            timeout: float = 15,
     ) -> None:
         """等待新事件或超时返回。"""
         run = self.get_run(run_id)
@@ -219,7 +226,7 @@ class TalentRunManager:
             return
         condition = self._conditions[run_id]
         async with condition:
-            try: # SSE 协程持续等待通知，直到收到新事件或超时
+            try:  # SSE 协程持续等待通知，直到收到新事件或超时
                 await asyncio.wait_for(condition.wait(), timeout=timeout)
             except TimeoutError:
                 return
@@ -253,10 +260,10 @@ class TalentRunManager:
         return self._record_store.get_run(run_id)
 
     def list_conversations(
-        self,
-        *,
-        status: str | None = None,
-        limit: int = 20,
+            self,
+            *,
+            status: str | None = None,
+            limit: int = 20,
     ) -> list[dict[str, Any]]:
         """列出会话。"""
         if self._record_store is None:
@@ -274,7 +281,7 @@ class TalentRunManager:
         """唤醒等待该运行的协程。"""
         condition = self._conditions[run_id]
         async with condition:
-            condition.notify_all() # 通知所有等待 SSE 的协程，表示有新事件可用
+            condition.notify_all()  # 通知所有等待 SSE 的协程，表示有新事件可用
 
     def _config(self, run: TalentRun) -> dict[str, Any]:
         """生成图调用所需的配置（线程 ID 等）。"""
@@ -297,11 +304,11 @@ class TalentRunManager:
                 turn_no=run.turn_no,
             )
             async for item in graph.astream(
-                graph_input,
-                self._config(run),
-                context=run_context,
-                stream_mode=["tasks", "updates"],
-                subgraphs=True,
+                    graph_input,
+                    self._config(run),
+                    context=run_context,
+                    stream_mode=["tasks", "updates"],
+                    subgraphs=True,
             ):
                 if run.status == RunStatus.CANCELLED:
                     return
@@ -368,10 +375,10 @@ class TalentRunManager:
         await self._emit(run, "step.started", data)
 
     async def _handle_updates(
-        self,
-        run: TalentRun,
-        namespace: tuple[str, ...],
-        chunk: Any,
+            self,
+            run: TalentRun,
+            namespace: tuple[str, ...],
+            chunk: Any,
     ) -> bool:
         """处理节点更新并投影为业务事件。"""
         if not isinstance(chunk, dict):
@@ -420,9 +427,9 @@ class TalentRunManager:
             self._collect_evidence(run, update)
             await self._project_progress(run, node, update)
             for event in project_graph_update(
-                namespace=namespace,
-                node=node,
-                update=update,
+                    namespace=namespace,
+                    node=node,
+                    update=update,
             ):
                 await self._emit_projected(run, event)
             if node == "validate_report" and update.get("report"):
@@ -447,10 +454,10 @@ class TalentRunManager:
                 seen.add(identity)
 
     async def _project_progress(
-        self,
-        run: TalentRun,
-        node: str,
-        update: dict[str, Any],
+            self,
+            run: TalentRun,
+            node: str,
+            update: dict[str, Any],
     ) -> None:
         """投影步骤进度。"""
         if node == "prepare_work_items":
@@ -517,9 +524,9 @@ class TalentRunManager:
                     for name, count in sorted(run.branch_status_counts.items())
                 )
                 data["summary"] = (
-                    f"{run.branch_completed} 个评估分支完成"
-                    f"，取证失败={run.extraction_failures}"
-                    + (f"，{statuses}" if statuses else "")
+                        f"{run.branch_completed} 个评估分支完成"
+                        f"，取证失败={run.extraction_failures}"
+                        + (f"，{statuses}" if statuses else "")
                 )
                 data["output"] = {
                     "status": run.graph_status or "branches_ready",
@@ -561,8 +568,8 @@ class TalentRunManager:
 
     @staticmethod
     def _resume_value(
-        payload: dict[str, Any],
-        value: str,
+            payload: dict[str, Any],
+            value: str,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """把用户输入解析为图可接受的恢复值。"""
         interaction_type = payload.get("type")
@@ -591,4 +598,3 @@ class TalentRunManager:
                 {"interaction_type": interaction_type, "interaction_id": interaction_id},
             )
         raise ValueError(f"暂不支持的人工交互类型: {interaction_type}")
-
